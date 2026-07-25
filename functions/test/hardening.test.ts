@@ -5,7 +5,11 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 import { expireStaleOrdersAction } from "../src/orders/service";
 import { rebuildYesterdayReportSummariesAction } from "../src/reports/service";
 import { logError, redactSensitive } from "../src/shared/logging";
-import { appCheckEnforcementEnabled, callableOptions } from "../src/shared/runtime";
+import {
+  appCheckEnforcementEnabled,
+  callableOptions,
+  sensitiveCallableOptions,
+} from "../src/shared/runtime";
 import { assertProductionGuard } from "../../scripts/shared/confirm-production";
 
 function init() {
@@ -52,6 +56,15 @@ describe("production hardening helpers", () => {
     vi.stubEnv("FIRESTORE_EMULATOR_HOST", undefined);
     expect(appCheckEnforcementEnabled()).toBe(true);
     expect(callableOptions().enforceAppCheck).toBe(true);
+  });
+
+  it("does not require replay-protected client tokens for sensitive callables", () => {
+    vi.stubEnv("ENABLE_APP_CHECK_ENFORCEMENT", "true");
+    vi.stubEnv("FUNCTIONS_EMULATOR", "false");
+    vi.stubEnv("FIRESTORE_EMULATOR_HOST", "");
+    const options = sensitiveCallableOptions();
+    expect(options.enforceAppCheck).toBe(true);
+    expect(options.consumeAppCheckToken).not.toBe(true);
   });
 
   it("redacts sensitive logging metadata", () => {
