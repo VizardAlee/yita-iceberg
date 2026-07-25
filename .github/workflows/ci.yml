@@ -22,6 +22,7 @@ jobs:
       - run: npm ci
       - run: npm --prefix functions ci
       - run: npx playwright install --with-deps chromium
+      - run: npm run audit:production
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run build

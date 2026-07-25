@@ -52,6 +52,7 @@ storage.rules                Firebase Storage rules
 
 ## Phase Documents
 
+- [Application Functionality Summary](docs/functionality-summary.md)
 - [Architecture](docs/architecture.md)
 - [Firestore Schema](docs/firestore-schema.md)
 - [Order State Machine](docs/order-state-machine.md)

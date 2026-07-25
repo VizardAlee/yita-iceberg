@@ -40,7 +40,7 @@ env:
     availability:
       - RUNTIME
   - variable: ENABLE_APP_CHECK_ENFORCEMENT
-    value: "false"
+    value: "true"
     availability:
       - RUNTIME
   - variable: ENABLE_REPORT_SUMMARY_REBUILD

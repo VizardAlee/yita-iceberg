@@ -46,6 +46,14 @@ describe("production hardening helpers", () => {
     expect(callableOptions().enforceAppCheck).toBe(true);
   });
 
+  it("enforces callable App Check by default outside emulators", () => {
+    vi.stubEnv("ENABLE_APP_CHECK_ENFORCEMENT", undefined);
+    vi.stubEnv("FUNCTIONS_EMULATOR", "false");
+    vi.stubEnv("FIRESTORE_EMULATOR_HOST", undefined);
+    expect(appCheckEnforcementEnabled()).toBe(true);
+    expect(callableOptions().enforceAppCheck).toBe(true);
+  });
+
   it("redacts sensitive logging metadata", () => {
     const redacted = redactSensitive({
       qrToken: "raw-token",

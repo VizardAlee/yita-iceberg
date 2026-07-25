@@ -18,7 +18,7 @@ export function appCheckEnforcementEnabled() {
   if (process.env.FUNCTIONS_EMULATOR === "true" || process.env.FIRESTORE_EMULATOR_HOST) {
     return false;
   }
-  return readBoolean(process.env.ENABLE_APP_CHECK_ENFORCEMENT);
+  return readBoolean(process.env.ENABLE_APP_CHECK_ENFORCEMENT, true);
 }
 
 export function reportSummaryRebuildEnabled() {

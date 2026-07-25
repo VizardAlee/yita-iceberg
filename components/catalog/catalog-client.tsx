@@ -1,8 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { ref, uploadBytes } from "firebase/storage";
+import { IconPhotoPlus, IconTrash } from "@tabler/icons-react";
 
 import { BranchRequired } from "@/components/branch/branch-required";
 import { useBranchContext } from "@/components/branch/branch-context";
@@ -62,6 +64,18 @@ type StockPoolResponse = {
   pool?: StockPool;
 };
 
+const productImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+const productImageMaxBytes = 5 * 1024 * 1024;
+
+function validateProductImage(file: File) {
+  if (!productImageTypes.has(file.type)) {
+    throw new Error("Use a JPEG, PNG, or WebP product image.");
+  }
+  if (file.size >= productImageMaxBytes) {
+    throw new Error("Product images must be smaller than 5 MB.");
+  }
+}
+
 async function fetchProducts() {
   const response = await fetch("/api/catalog/products", {
     cache: "no-store",
@@ -91,13 +105,7 @@ async function fetchProduct(productId: string) {
 }
 
 async function uploadProductImage(productId: string, file: File, uploadedBy: string) {
-  const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
-  if (!allowedTypes.has(file.type)) {
-    throw new Error("Use a JPEG, PNG, or WebP product image.");
-  }
-  if (file.size >= 5 * 1024 * 1024) {
-    throw new Error("Product images must be smaller than 5 MB.");
-  }
+  validateProductImage(file);
 
   const imageStoragePath = `product-images/${productId}/primary`;
   await uploadBytes(ref(getFirebaseServices().storage, imageStoragePath), file, {
@@ -283,35 +291,202 @@ function ProductForm() {
   const [name, setName] = useState("");
   const [unit, setUnit] = useState("");
   const [barcode, setBarcode] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ title: string; detail: string } | null>(null);
   const [createdProduct, setCreatedProduct] = useState<CreateProductResponse | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [idempotencyKey, setIdempotencyKey] = useState(() => createIdempotencyKey("product"));
+
+  function selectImage(file: File | null) {
+    if (!file) {
+      setImageFile(null);
+      return true;
+    }
+
+    try {
+      validateProductImage(file);
+      setImageFile(file);
+      setNotice(null);
+      return true;
+    } catch (error) {
+      setImageFile(null);
+      setNotice({
+        title: "Image not selected",
+        detail: error instanceof Error ? error.message : "Invalid product image.",
+      });
+      return false;
+    }
+  }
+
+  function resetForm() {
+    setName("");
+    setUnit("");
+    setBarcode("");
+    setImageFile(null);
+    setIdempotencyKey(createIdempotencyKey("product"));
+  }
 
   async function submit() {
     setSaving(true);
-    setMessage(null);
+    setNotice(null);
+    setCreatedProduct(null);
+    const selectedImage = imageFile;
+
     try {
       const result = await createProduct({
-        name,
-        unit,
+        name: name.trim(),
+        unit: unit.trim(),
         ...(barcode.trim() ? { barcode } : {}),
-        idempotencyKey: createIdempotencyKey("product"),
+        idempotencyKey,
       });
-      if (imageFile) await uploadProductImage(result.productId!, imageFile, user.uid);
 
       setCreatedProduct(result);
-      setMessage(`Product ${result.sku} created with a scannable QR code${imageFile ? " and image" : ""}.`);
-      setName("");
-      setUnit("");
-      setBarcode("");
-      setImageFile(null);
+      resetForm();
+
+      if (selectedImage) {
+        try {
+          await uploadProductImage(result.productId!, selectedImage, user.uid);
+        } catch (error) {
+          setNotice({
+            title: "Product created; image pending",
+            detail: `${result.sku} was created successfully, but its image could not be attached. Open the product to retry. ${error instanceof Error ? error.message : ""}`.trim(),
+          });
+          return;
+        }
+      }
+
+      setNotice({
+        title: "Product created",
+        detail: `${result.sku} was created with a scannable QR code${selectedImage ? " and product image" : ""}.`,
+      });
+    } catch (error) {
+      setNotice({
+        title: "Unable to create product",
+        detail: error instanceof Error ? error.message : "Create failed.",
+      });
     } finally {
       setSaving(false);
     }
   }
 
-  return <FormShell title="New product" backHref="/catalog/products">{message ? <OperationState detail={message} title={createdProduct ? "Created" : "Product image"} /> : null}{createdProduct?.qrCodePayload ? <div className="print-surface app-surface flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center"><QrCode alt={`Product QR code for ${createdProduct.sku}`} payload={createdProduct.qrCodePayload} /><div className="space-y-3"><div><p className="text-sm font-semibold">Generated product label</p><p className="text-sm text-muted-foreground">SKU {createdProduct.sku}. Scan this QR to identify the product record.</p></div><QrPrintButton payload={createdProduct.qrCodePayload} /><Button asChild variant="outline"><Link href={`/catalog/products/${createdProduct.productId}`}>Open product</Link></Button></div></div> : null}<div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">SKU and QR code will be generated automatically when the product is created.</div><Field label="Name"><input className="h-9 rounded-md border bg-background px-3" onChange={(e) => setName(e.target.value)} value={name} /></Field><Field label="Unit"><input className="h-9 rounded-md border bg-background px-3" onChange={(e) => setUnit(e.target.value)} value={unit} /></Field><Field label="Barcode"><input className="h-9 rounded-md border bg-background px-3" onChange={(e) => setBarcode(e.target.value)} value={barcode} /></Field><Field label="Product image"><input accept="image/jpeg,image/png,image/webp" className="block w-full rounded-md border bg-background p-2 text-sm" onChange={(event) => setImageFile(event.target.files?.[0] ?? null)} type="file" /></Field><Button disabled={saving || !name || !unit} onClick={() => void submit().catch((err) => setMessage(err instanceof Error ? err.message : "Create failed"))} type="button">{saving ? "Creating..." : "Create product"}</Button></FormShell>;
+  return (
+    <FormShell title="New product" backHref="/catalog/products">
+      {notice ? <OperationState detail={notice.detail} title={notice.title} /> : null}
+      {createdProduct?.qrCodePayload ? (
+        <div className="print-surface app-surface flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center">
+          <QrCode alt={`Product QR code for ${createdProduct.sku}`} payload={createdProduct.qrCodePayload} />
+          <div className="space-y-3">
+            <div>
+              <p className="text-sm font-semibold">Generated product label</p>
+              <p className="text-sm text-muted-foreground">SKU {createdProduct.sku}</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <QrPrintButton payload={createdProduct.qrCodePayload} />
+              <Button asChild variant="outline">
+                <Link href={`/catalog/products/${createdProduct.productId}`}>Open product</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      <div className="app-surface rounded-lg border p-4">
+        <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_15rem]">
+          <div className="grid content-start gap-4">
+            <Field label="Name">
+              <input className="h-9 rounded-md border bg-background px-3" onChange={(event) => setName(event.target.value)} value={name} />
+            </Field>
+            <Field label="Unit">
+              <input className="h-9 rounded-md border bg-background px-3" onChange={(event) => setUnit(event.target.value)} value={unit} />
+            </Field>
+            <Field label="Barcode">
+              <input className="h-9 rounded-md border bg-background px-3" onChange={(event) => setBarcode(event.target.value)} value={barcode} />
+            </Field>
+            <Button disabled={saving || !name.trim() || !unit.trim()} onClick={() => void submit()} type="button">
+              {saving ? (imageFile ? "Creating and uploading..." : "Creating...") : "Create product"}
+            </Button>
+          </div>
+          <ProductImagePicker disabled={saving} file={imageFile} onChange={selectImage} />
+        </div>
+      </div>
+    </FormShell>
+  );
+}
+
+function ProductImagePicker({
+  disabled,
+  file,
+  onChange,
+}: {
+  disabled: boolean;
+  file: File | null;
+  onChange: (file: File | null) => boolean;
+}) {
+  const inputId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!file) {
+      setPreviewUrl(null);
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
+
+    const nextUrl = URL.createObjectURL(file);
+    setPreviewUrl(nextUrl);
+    return () => URL.revokeObjectURL(nextUrl);
+  }, [file]);
+
+  return (
+    <div className="grid content-start gap-3">
+      <span className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+        Product image
+      </span>
+      <div className="relative grid aspect-square w-full place-items-center overflow-hidden rounded-lg border bg-muted text-muted-foreground">
+        {previewUrl ? (
+          <Image alt="Selected product" className="object-cover" fill sizes="240px" src={previewUrl} unoptimized />
+        ) : (
+          <IconPhotoPlus aria-hidden="true" className="size-10 opacity-55" />
+        )}
+      </div>
+      <input
+        accept="image/jpeg,image/png,image/webp"
+        className="sr-only"
+        disabled={disabled}
+        id={inputId}
+        onChange={(event) => {
+          const accepted = onChange(event.target.files?.[0] ?? null);
+          if (!accepted) event.currentTarget.value = "";
+        }}
+        ref={inputRef}
+        type="file"
+      />
+      <div className="flex items-center gap-2">
+        <Button asChild className="min-w-0 flex-1" variant="outline">
+          <label htmlFor={inputId}>
+            <IconPhotoPlus aria-hidden="true" />
+            {file ? "Change image" : "Choose image"}
+          </label>
+        </Button>
+        {file ? (
+          <Button
+            aria-label="Remove selected image"
+            disabled={disabled}
+            onClick={() => onChange(null)}
+            size="icon"
+            title="Remove selected image"
+            type="button"
+            variant="ghost"
+          >
+            <IconTrash aria-hidden="true" />
+          </Button>
+        ) : null}
+      </div>
+      <p className="truncate text-xs text-muted-foreground" title={file?.name}>
+        {file?.name ?? "JPEG, PNG, or WebP under 5 MB"}
+      </p>
+    </div>
+  );
 }
 
 export function ProductDetailClient({ productId }: { productId: string }) {
