@@ -150,13 +150,28 @@ async function signIn(browser: Browser, index: number, selectBranch = false) {
   page.on("pageerror", (error) => {
     console.error(`[browser] ${error.message}`);
   });
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    if (url.hostname.endsWith(".cloudfunctions.net")) {
+      const headers = request.headers();
+      console.error(
+        `[browser] Callable credentials: auth=${Boolean(headers.authorization)} appCheck=${Boolean(headers["x-firebase-appcheck"])}`,
+      );
+    }
+  });
   page.on("response", async (response) => {
+    const url = new URL(response.url());
+    if (url.hostname === "content-firebaseappcheck.googleapis.com") {
+      console.error(`[browser] App Check exchange: HTTP ${response.status()} ${url.pathname}`);
+    }
     if (response.status() >= 400) {
-      const url = new URL(response.url());
       console.error(`[browser] HTTP ${response.status()} ${url.origin}${url.pathname}`);
       if (url.hostname === "content-firebaseappcheck.googleapis.com") {
         const body = await response.text().catch(() => "");
         if (body) console.error(`[browser] App Check response: ${body.slice(0, 1_000)}`);
+      } else if (url.hostname.endsWith(".cloudfunctions.net")) {
+        const body = await response.text().catch(() => "");
+        if (body) console.error(`[browser] Callable response: ${body.slice(0, 1_000)}`);
       }
     }
   });
@@ -243,11 +258,13 @@ async function runWorkflow() {
     await registrar.page.getByLabel("Walk-in phone").fill("08000000001");
     await registrar.page.getByRole("button", { name: "Create order" }).click();
     const orderLink = registrar.page.getByRole("link", { name: "Open order", exact: true });
-    try {
-      await expect(orderLink).toBeVisible({ timeout: 60_000 });
-    } catch (error) {
+    await Promise.race([
+      orderLink.waitFor({ state: "visible", timeout: 60_000 }),
+      registrar.page.getByText("Action failed", { exact: true }).waitFor({ state: "visible", timeout: 60_000 }),
+    ]);
+    if (!(await orderLink.isVisible())) {
       console.error(`[registrar page]\n${(await registrar.page.locator("body").innerText()).slice(0, 4_000)}`);
-      throw error;
+      throw new Error("Production registrar could not create the controlled order.");
     }
     const href = await orderLink.getAttribute("href");
     orderId = href!.split("/").at(-1)!;
