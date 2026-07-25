@@ -45,7 +45,6 @@ export function callableOptions(overrides: Partial<CallableOptions> = {}): Calla
 
 export function sensitiveCallableOptions(overrides: Partial<CallableOptions> = {}): CallableOptions {
   return callableOptions({
-    consumeAppCheckToken: appCheckEnforcementEnabled(),
     timeoutSeconds: 90,
     ...overrides,
   });
