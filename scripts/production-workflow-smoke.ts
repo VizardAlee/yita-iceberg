@@ -15,6 +15,7 @@ const env = z.object({
   FIREBASE_PROJECT_ID: z.literal("yita-iceberg"),
   FIREBASE_SERVICE_ACCOUNT_FILE: z.string().optional(),
   NEXT_PUBLIC_FIREBASE_API_KEY: z.string().min(1),
+  PRODUCTION_WORKFLOW_APP_CHECK_DEBUG_TOKEN: z.string().uuid().optional(),
   PRODUCTION_WORKFLOW_HEADLESS: z.enum(["true", "false"]).default("true"),
 }).parse(process.env);
 
@@ -135,6 +136,11 @@ async function seed() {
 
 async function signIn(browser: Browser, index: number, selectBranch = false) {
   const context = await browser.newContext();
+  if (env.PRODUCTION_WORKFLOW_APP_CHECK_DEBUG_TOKEN) {
+    await context.addInitScript((token) => {
+      Object.assign(window, { FIREBASE_APPCHECK_DEBUG_TOKEN: token });
+    }, env.PRODUCTION_WORKFLOW_APP_CHECK_DEBUG_TOKEN);
+  }
   const page = await context.newPage();
   page.on("console", (message) => {
     if (message.type() === "error") {
