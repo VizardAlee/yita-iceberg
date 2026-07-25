@@ -15,6 +15,7 @@ const env = z.object({
   FIREBASE_PROJECT_ID: z.literal("yita-iceberg"),
   FIREBASE_SERVICE_ACCOUNT_FILE: z.string().optional(),
   NEXT_PUBLIC_FIREBASE_API_KEY: z.string().min(1),
+  PRODUCTION_WORKFLOW_HEADLESS: z.enum(["true", "false"]).default("true"),
 }).parse(process.env);
 
 const password = `Yi!${randomBytes(18).toString("base64url")}`;
@@ -135,6 +136,24 @@ async function seed() {
 async function signIn(browser: Browser, index: number, selectBranch = false) {
   const context = await browser.newContext();
   const page = await context.newPage();
+  page.on("console", (message) => {
+    if (message.type() === "error") {
+      console.error(`[browser] ${message.text()}`);
+    }
+  });
+  page.on("pageerror", (error) => {
+    console.error(`[browser] ${error.message}`);
+  });
+  page.on("response", async (response) => {
+    if (response.status() >= 400) {
+      const url = new URL(response.url());
+      console.error(`[browser] HTTP ${response.status()} ${url.origin}${url.pathname}`);
+      if (url.hostname === "content-firebaseappcheck.googleapis.com") {
+        const body = await response.text().catch(() => "");
+        if (body) console.error(`[browser] App Check response: ${body.slice(0, 1_000)}`);
+      }
+    }
+  });
   await page.goto(`${env.APP_BASE_URL}/sign-in`);
   await page.getByLabel("Email").fill(users[index][1]);
   await page.getByLabel("Password").fill(password);
@@ -196,7 +215,9 @@ async function verifyMissingAppCheckRejected() {
 }
 
 async function runWorkflow() {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({
+    headless: env.PRODUCTION_WORKFLOW_HEADLESS === "true",
+  });
   const db = getFirestore();
   let orderId = "";
   let orderNumber = "";
@@ -216,7 +237,12 @@ async function runWorkflow() {
     await registrar.page.getByLabel("Walk-in phone").fill("08000000001");
     await registrar.page.getByRole("button", { name: "Create order" }).click();
     const orderLink = registrar.page.getByRole("link", { name: "Open order", exact: true });
-    await expect(orderLink).toBeVisible({ timeout: 60_000 });
+    try {
+      await expect(orderLink).toBeVisible({ timeout: 60_000 });
+    } catch (error) {
+      console.error(`[registrar page]\n${(await registrar.page.locator("body").innerText()).slice(0, 4_000)}`);
+      throw error;
+    }
     const href = await orderLink.getAttribute("href");
     orderId = href!.split("/").at(-1)!;
     orderNumber =
@@ -289,7 +315,6 @@ async function runWorkflow() {
       throw new Error("Production workflow accounting did not return to its expected net-zero state.");
     }
 
-    await verifyMissingAppCheckRejected();
     console.log(`Controlled production workflow passed: order ${orderNumber}, reversal ${reversalDocument.data()?.reversalNumber}.`);
   } finally {
     await browser.close();
@@ -335,6 +360,8 @@ async function main() {
   initializeAdmin();
   await seed();
   try {
+    await verifyMissingAppCheckRejected();
+    console.log("Callable request without App Check was rejected.");
     await runWorkflow();
   } finally {
     await cleanup();
