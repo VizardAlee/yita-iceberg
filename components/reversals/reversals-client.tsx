@@ -112,7 +112,7 @@ function ReversalList() {
         </Field>
       </div>
       {error ? <OperationState detail={error} title="Reversals unavailable" /> : null}
-      <div className="overflow-x-auto rounded-lg border">
+      <div className="responsive-table-deck overflow-x-auto rounded-lg border">
         <table className="min-w-full text-left text-sm">
           <thead className="bg-muted text-xs uppercase text-muted-foreground">
             <tr><th className="px-3 py-2">Reversal</th><th className="px-3 py-2">Order</th><th className="px-3 py-2">Type</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Refund</th><th className="px-3 py-2">Credit</th><th className="px-3 py-2">Requested by</th><th className="px-3 py-2">Requested</th><th className="px-3 py-2">Action</th></tr>
@@ -120,15 +120,15 @@ function ReversalList() {
           <tbody className="divide-y">
             {rows.map((row) => (
               <tr key={row.id}>
-                <td className="px-3 py-2 font-medium">{row.reversalNumber}</td>
-                <td className="px-3 py-2">{row.orderNumber}</td>
-                <td className="px-3 py-2">{label(row.reversalType)}</td>
-                <td className="px-3 py-2">{label(row.status)}</td>
-                <td className="px-3 py-2">{formatNairaFromKobo(row.refundAmountKobo)}</td>
-                <td className="px-3 py-2">{formatNairaFromKobo(row.creditReductionKobo)}</td>
-                <td className="px-3 py-2">{userName(row.requestedBy)}</td>
-                <td className="px-3 py-2">{timestampLabel(row.requestedAt)}</td>
-                <td className="px-3 py-2"><Button asChild size="sm" variant="outline"><Link href={`/reversals/${row.id}`}>Open</Link></Button></td>
+                <td className="px-3 py-2 font-medium" data-deck-primary data-label="Reversal">{row.reversalNumber}</td>
+                <td className="px-3 py-2" data-label="Order">{row.orderNumber}</td>
+                <td className="px-3 py-2" data-label="Type">{label(row.reversalType)}</td>
+                <td className="px-3 py-2" data-label="Status">{label(row.status)}</td>
+                <td className="px-3 py-2" data-label="Refund">{formatNairaFromKobo(row.refundAmountKobo)}</td>
+                <td className="px-3 py-2" data-label="Credit">{formatNairaFromKobo(row.creditReductionKobo)}</td>
+                <td className="px-3 py-2" data-label="Requested by">{userName(row.requestedBy)}</td>
+                <td className="px-3 py-2" data-label="Requested">{timestampLabel(row.requestedAt)}</td>
+                <td className="px-3 py-2" data-deck-actions data-label="Action"><Button asChild size="sm" variant="outline"><Link href={`/reversals/${row.id}`}>Open</Link></Button></td>
               </tr>
             ))}
           </tbody>
@@ -266,7 +266,7 @@ function ItemInputs({ preview, type, quantities, returned, setQuantities, setRet
   const full = type.startsWith("full_reversal");
   const noReturn = type.endsWith("_without_stock_return");
   return (
-    <div className="overflow-x-auto rounded-lg border">
+    <div className="responsive-table-deck overflow-x-auto rounded-lg border">
       <table className="min-w-full text-left text-sm">
         <thead className="bg-muted text-xs uppercase text-muted-foreground"><tr><th className="px-3 py-2">Item</th><th className="px-3 py-2">Remaining</th><th className="px-3 py-2">Reverse</th><th className="px-3 py-2">Stock returned</th><th className="px-3 py-2">Line value</th></tr></thead>
         <tbody className="divide-y">
@@ -274,11 +274,11 @@ function ItemInputs({ preview, type, quantities, returned, setQuantities, setRet
             const qty = full ? item.remainingReversibleQuantity : Number(quantities[item.productId]) || 0;
             return (
               <tr key={item.productId}>
-                <td className="px-3 py-2"><p className="font-medium">{item.productName}</p><p className="text-xs text-muted-foreground">{item.sku} · {item.unit}</p></td>
-                <td className="px-3 py-2">{formatQuantity(item.remainingReversibleQuantity)}</td>
-                <td className="px-3 py-2"><input className="h-9 w-24 rounded-md border bg-background px-3" disabled={full} max={item.remainingReversibleQuantity} min={0} onChange={(event) => setQuantities({ ...quantities, [item.productId]: event.target.value })} type="number" value={full ? item.remainingReversibleQuantity : quantities[item.productId] ?? ""} /></td>
-                <td className="px-3 py-2"><input className="h-9 w-24 rounded-md border bg-background px-3" disabled={noReturn} max={qty} min={0} onChange={(event) => setReturned({ ...returned, [item.productId]: event.target.value })} type="number" value={noReturn ? 0 : returned[item.productId] ?? qty} /></td>
-                <td className="px-3 py-2">{formatNairaFromKobo(qty * item.originalUnitPriceKobo)}</td>
+                <td className="px-3 py-2" data-deck-primary data-label="Item"><p className="font-medium">{item.productName}</p><p className="text-xs text-muted-foreground">{item.sku} · {item.unit}</p></td>
+                <td className="px-3 py-2" data-label="Remaining">{formatQuantity(item.remainingReversibleQuantity)}</td>
+                <td className="px-3 py-2" data-label="Reverse"><input className="h-9 w-24 rounded-md border bg-background px-3" disabled={full} max={item.remainingReversibleQuantity} min={0} onChange={(event) => setQuantities({ ...quantities, [item.productId]: event.target.value })} type="number" value={full ? item.remainingReversibleQuantity : quantities[item.productId] ?? ""} /></td>
+                <td className="px-3 py-2" data-label="Stock returned"><input className="h-9 w-24 rounded-md border bg-background px-3" disabled={noReturn} max={qty} min={0} onChange={(event) => setReturned({ ...returned, [item.productId]: event.target.value })} type="number" value={noReturn ? 0 : returned[item.productId] ?? qty} /></td>
+                <td className="px-3 py-2" data-label="Line value">{formatNairaFromKobo(qty * item.originalUnitPriceKobo)}</td>
               </tr>
             );
           })}
@@ -394,10 +394,10 @@ function ReversalApproval({ reversalId }: { reversalId: string }) {
 function ReversalItems({ items }: { items: SaleReversalItemDocument[] }) {
   if (items.length === 0) return <OperationState detail="This reversal has no item quantity correction." title="No item movement" />;
   return (
-    <div className="overflow-x-auto rounded-lg border">
+    <div className="responsive-table-deck overflow-x-auto rounded-lg border">
       <table className="min-w-full text-left text-sm">
         <thead className="bg-muted text-xs uppercase text-muted-foreground"><tr><th className="px-3 py-2">Item</th><th className="px-3 py-2">Qty</th><th className="px-3 py-2">Returned</th><th className="px-3 py-2">Not returned</th><th className="px-3 py-2">Line total</th><th className="px-3 py-2">Value impact</th></tr></thead>
-        <tbody className="divide-y">{items.map((item) => <tr key={item.productId}><td className="px-3 py-2"><p className="font-medium">{item.productName}</p><p className="text-xs text-muted-foreground">{item.sku}</p></td><td className="px-3 py-2">{item.requestedReversalQuantity}</td><td className="px-3 py-2">{item.stockReturnedQuantity}</td><td className="px-3 py-2">{item.stockNotReturnedQuantity}</td><td className="px-3 py-2">{formatNairaFromKobo(item.reversalLineTotalKobo)}</td><td className="px-3 py-2">{formatNairaFromKobo(item.inventoryValueImpactKobo)}</td></tr>)}</tbody>
+        <tbody className="divide-y">{items.map((item) => <tr key={item.productId}><td className="px-3 py-2" data-deck-primary data-label="Item"><p className="font-medium">{item.productName}</p><p className="text-xs text-muted-foreground">{item.sku}</p></td><td className="px-3 py-2" data-label="Quantity">{item.requestedReversalQuantity}</td><td className="px-3 py-2" data-label="Returned">{item.stockReturnedQuantity}</td><td className="px-3 py-2" data-label="Not returned">{item.stockNotReturnedQuantity}</td><td className="px-3 py-2" data-label="Line total">{formatNairaFromKobo(item.reversalLineTotalKobo)}</td><td className="px-3 py-2" data-label="Value impact">{formatNairaFromKobo(item.inventoryValueImpactKobo)}</td></tr>)}</tbody>
       </table>
     </div>
   );

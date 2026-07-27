@@ -9,7 +9,7 @@ export function OrderItemTable({
   compact?: boolean;
 }) {
   return (
-    <div className="overflow-x-auto rounded-lg border">
+    <div className="responsive-table-deck overflow-x-auto rounded-lg border">
       <table className="min-w-full text-left text-sm">
         <thead className="bg-muted text-xs uppercase text-muted-foreground">
           <tr>
@@ -23,24 +23,24 @@ export function OrderItemTable({
         <tbody className="divide-y">
           {items.map((item) => (
             <tr key={item.productId}>
-              <td className="px-3 py-2">
+              <td className="px-3 py-2" data-deck-primary data-label="Item">
                 <p className="font-medium">{item.productName}</p>
                 <p className="text-xs text-muted-foreground">{item.sku}</p>
               </td>
-              <td className="px-3 py-2">{formatQuantity(item.quantity, item.unit)}</td>
+              <td className="px-3 py-2" data-label="Quantity">{formatQuantity(item.quantity, item.unit)}</td>
               {!compact ? (
-                <td className="px-3 py-2">
+                <td className="px-3 py-2" data-label="Unit price">
                   {formatNairaFromKobo(item.originalUnitPriceKobo)}
                 </td>
               ) : null}
               {!compact ? (
-                <td className="px-3 py-2">
+                <td className="px-3 py-2" data-label="Discount">
                   {item.discountPercent > 0
                     ? `${item.discountPercent}%`
                     : "None"}
                 </td>
               ) : null}
-              <td className="px-3 py-2 text-right font-medium">
+              <td className="px-3 py-2 text-right font-medium" data-label="Total">
                 {formatNairaFromKobo(item.lineTotalKobo)}
               </td>
             </tr>

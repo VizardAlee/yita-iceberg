@@ -103,6 +103,7 @@ test.describe("authenticated mobile layout", () => {
 
     const bottomNav = page.getByRole("navigation", { name: "Primary navigation" });
     const moreButton = page.getByRole("button", { name: "More" });
+    await expect(bottomNav.locator(":scope > a, :scope > button")).toHaveCount(4);
     await moreButton.click();
 
     const dialog = page.getByRole("dialog", { name: "More" });
@@ -171,6 +172,49 @@ test.describe("authenticated mobile layout", () => {
     ]) {
       await expectViewportFit(page, path);
       await expect(page.getByText("Missing or insufficient permissions.")).toHaveCount(0);
+    }
+  });
+
+  test("wide data tables become labeled record decks on phones", async ({
+    browserName,
+    page,
+  }) => {
+    test.skip(
+      browserName === "webkit",
+      "The shared table-to-deck behavior is verified in mobile Chromium.",
+    );
+    await signInAsAdmin(page);
+
+    for (const path of ["/access", "/branches", "/inventory"]) {
+      await gotoStable(page, path);
+      const deck = page.locator(".responsive-table-deck").first();
+      const firstRecord = deck.locator("tbody tr").first();
+
+      await expect(firstRecord).toBeVisible({ timeout: 30_000 });
+
+      const layout = await deck.evaluate((element) => {
+        const table = element.querySelector("table");
+        const header = element.querySelector("thead");
+        const row = element.querySelector("tbody tr");
+        const cells = Array.from(row?.querySelectorAll("td") ?? []);
+
+        return {
+          wrapperFits: element.scrollWidth <= element.clientWidth + 1,
+          tableDisplay: table ? getComputedStyle(table).display : null,
+          headerPosition: header ? getComputedStyle(header).position : null,
+          rowDisplay: row ? getComputedStyle(row).display : null,
+          labels: cells
+            .filter((cell) => !cell.hasAttribute("data-deck-empty"))
+            .map((cell) => cell.getAttribute("data-label")),
+        };
+      });
+
+      expect(layout.wrapperFits, `${path} deck should not scroll sideways`).toBe(true);
+      expect(layout.tableDisplay).toBe("block");
+      expect(layout.headerPosition).toBe("absolute");
+      expect(layout.rowDisplay).toBe("grid");
+      expect(layout.labels.length).toBeGreaterThan(0);
+      expect(layout.labels.every(Boolean)).toBe(true);
     }
   });
 

@@ -185,7 +185,7 @@ function OrdersContent() {
         <OperationState actionLabel="Retry" detail={error} onAction={() => void loadOrders()} title="Order queue unavailable" />
       ) : null}
 
-      <div className="overflow-x-auto rounded-lg border">
+      <div className="responsive-table-deck overflow-x-auto rounded-lg border">
         <table className="min-w-full text-left text-sm">
           <thead className="bg-muted text-xs uppercase text-muted-foreground">
             <tr>
@@ -202,13 +202,13 @@ function OrdersContent() {
           <tbody className="divide-y">
             {visibleOrders.map((order) => (
               <tr key={order.id}>
-                <td className="px-3 py-2 font-medium">{order.orderNumber}</td>
-                <td className="px-3 py-2">
+                <td className="px-3 py-2 font-medium" data-deck-primary data-label="Order">{order.orderNumber}</td>
+                <td className="px-3 py-2" data-label="Customer">
                   {order.customerSnapshot?.name || (order.customerType === "walk_in" ? "Walk-in" : "Registered customer")}
                 </td>
-                <td className="px-3 py-2"><OrderStatusBadge status={order.status} /></td>
-                <td className="px-3 py-2"><PaymentStatusBadge status={order.paymentStatus} /></td>
-                <td className="px-3 py-2">
+                <td className="px-3 py-2" data-label="Status"><OrderStatusBadge status={order.status} /></td>
+                <td className="px-3 py-2" data-label="Payment"><PaymentStatusBadge status={order.paymentStatus} /></td>
+                <td className="px-3 py-2" data-label="Staff">
                   <p className="font-medium">
                     {order.discountRequest?.requestedByName || order.createdByName || "Staff member"}
                   </p>
@@ -216,9 +216,9 @@ function OrdersContent() {
                     {order.status === "awaiting_discount_approval" ? "Requested discount" : "Created order"}
                   </p>
                 </td>
-                <td className="px-3 py-2 text-right font-medium">{formatNairaFromKobo(order.grandTotalKobo)}</td>
-                <td className="px-3 py-2">{timestampLabel(order.createdAt)}</td>
-                <td className="px-3 py-2">
+                <td className="px-3 py-2 text-right font-medium" data-label="Total">{formatNairaFromKobo(order.grandTotalKobo)}</td>
+                <td className="px-3 py-2" data-label="Created">{timestampLabel(order.createdAt)}</td>
+                <td className="px-3 py-2" data-deck-actions data-label="Actions">
                   <div className="flex flex-wrap gap-2">
                     <Button asChild size="sm" variant="outline">
                       <Link href={`/orders/${order.id}`}>Open</Link>
@@ -244,7 +244,7 @@ function OrdersContent() {
             ))}
             {!loading && visibleOrders.length === 0 ? (
               <tr>
-                <td className="px-3 py-8 text-center text-muted-foreground" colSpan={8}>
+                <td className="px-3 py-8 text-center text-muted-foreground" colSpan={8} data-deck-empty>
                   No orders found for this branch and filter.
                 </td>
               </tr>

@@ -436,7 +436,7 @@ export function AccessManagementClient() {
           <OperationState detail="Invite a user to begin building the staff list." title="No users found" />
         ) : null}
         {users.length > 0 ? (
-          <div className="overflow-x-auto rounded-lg border">
+          <div className="responsive-table-deck overflow-x-auto rounded-lg border">
             <table className="min-w-full text-left text-sm">
               <thead className="bg-muted text-xs uppercase text-muted-foreground">
                 <tr>
@@ -450,37 +450,38 @@ export function AccessManagementClient() {
               <tbody className="divide-y">
                 {users.map((profile) => (
                   <tr key={profile.uid}>
-                    <td className="px-3 py-2">
+                    <td className="px-3 py-2" data-deck-primary data-label="Name">
                       <p className="font-medium">{profile.displayName}</p>
                       <p className="text-xs text-muted-foreground">{profile.email}</p>
                     </td>
-                    <td className="px-3 py-2">{roleLabels[profile.platformRole]}</td>
-                    <td className="max-w-[260px] px-3 py-2">
+                    <td className="px-3 py-2" data-label="Role">{roleLabels[profile.platformRole]}</td>
+                    <td className="max-w-[260px] px-3 py-2" data-label="Branches">
                       {profile.assignedBranchIds.length > 0
                         ? profile.assignedBranchIds
                             .map((branchId) => branchNames.get(branchId) ?? branchId)
                             .join(", ")
                         : "All branches"}
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-3 py-2" data-label="Status">
                       <span className="rounded-md bg-secondary px-2 py-1 text-xs">
                         {profile.isActive ? "Active" : "Inactive"}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-right">
-                      {profile.uid !== user.uid &&
-                      (user.platformRole === "super_admin" || profile.platformRole !== "super_admin") ? (
+                    {profile.uid !== user.uid &&
+                    (user.platformRole === "super_admin" || profile.platformRole !== "super_admin") ? (
+                      <td className="px-3 py-2 text-right" data-deck-actions data-label="Actions">
                         <Button
                           aria-label={`Edit access for ${profile.displayName}`}
                           onClick={() => beginEdit(profile)}
-                          size="icon"
+                          size="sm"
                           type="button"
                           variant="ghost"
                         >
                           <IconEdit />
+                          Edit
                         </Button>
-                      ) : null}
-                    </td>
+                      </td>
+                    ) : null}
                   </tr>
                 ))}
               </tbody>

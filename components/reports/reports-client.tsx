@@ -787,7 +787,7 @@ function BranchComparisonTable({ rows }: { rows: Record<string, unknown>[] }) {
         <h2 className="text-lg font-semibold tracking-normal">Branch comparison</h2>
         <p className="text-sm text-muted-foreground">Sales and confirmed receipts across active locations.</p>
       </div>
-      <div className="app-surface overflow-x-auto rounded-xl border">
+      <div className="app-surface responsive-table-deck overflow-x-auto rounded-xl border">
         <table className="min-w-full text-left text-sm">
           <thead className="bg-muted text-xs uppercase text-muted-foreground">
             <tr><th className="px-3 py-2">Branch</th><th className="px-3 py-2">Sales</th><th className="px-3 py-2">Received</th></tr>
@@ -795,9 +795,9 @@ function BranchComparisonTable({ rows }: { rows: Record<string, unknown>[] }) {
           <tbody className="divide-y">
             {rows.map((row) => (
               <tr key={String(row.branchId)}>
-                <td className="px-3 py-2 font-medium">{moneyOrValue(row.branch)}</td>
-                <td className="px-3 py-2">{moneyOrValue(row.salesKobo, true)}</td>
-                <td className="px-3 py-2">{moneyOrValue(row.receivedKobo, true)}</td>
+                <td className="px-3 py-2 font-medium" data-deck-primary data-label="Branch">{moneyOrValue(row.branch)}</td>
+                <td className="px-3 py-2" data-label="Sales">{moneyOrValue(row.salesKobo, true)}</td>
+                <td className="px-3 py-2" data-label="Received">{moneyOrValue(row.receivedKobo, true)}</td>
               </tr>
             ))}
           </tbody>
@@ -964,7 +964,7 @@ function ReportTable({
   rows: Record<string, unknown>[];
 }) {
   return (
-    <div className="overflow-x-auto rounded-lg border">
+    <div className="responsive-table-deck overflow-x-auto rounded-lg border">
       <table className="min-w-full text-left text-sm">
         <thead className="bg-muted text-xs uppercase text-muted-foreground">
           <tr>{columns.map((column) => <th className="px-3 py-2" key={column.key}>{column.label}</th>)}</tr>
@@ -973,7 +973,14 @@ function ReportTable({
           {rows.map((row, index) => (
             <tr key={`${row.id ?? row.orderId ?? row.transactionId ?? index}`}>
               {columns.map((column) => (
-                <td className="max-w-[220px] truncate px-3 py-2" key={column.key}>{moneyOrValue(row[column.key], column.money)}</td>
+                <td
+                  className="max-w-[220px] truncate px-3 py-2"
+                  data-deck-primary={column.key === columns[0]?.key || undefined}
+                  data-label={column.label}
+                  key={column.key}
+                >
+                  {moneyOrValue(row[column.key], column.money)}
+                </td>
               ))}
             </tr>
           ))}

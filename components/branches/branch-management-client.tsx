@@ -204,7 +204,7 @@ export function BranchManagementClient() {
             title="No branches found"
           />
         ) : (
-          <div className="overflow-x-auto rounded-lg border">
+          <div className="responsive-table-deck overflow-x-auto rounded-lg border">
             <table className="min-w-full text-left text-sm">
               <thead className="bg-muted text-xs uppercase text-muted-foreground">
                 <tr>
@@ -219,21 +219,21 @@ export function BranchManagementClient() {
               <tbody className="divide-y">
                 {sortedBranches.map((branch) => (
                   <tr key={branch.id}>
-                    <td className="px-3 py-2">
+                    <td className="px-3 py-2" data-deck-primary data-label="Branch">
                       <p className="font-medium">{branch.name}</p>
                       <p className="text-xs text-muted-foreground">{branch.id}</p>
                     </td>
-                    <td className="px-3 py-2">{branch.code ?? "—"}</td>
-                    <td className="px-3 py-2">
+                    <td className="px-3 py-2" data-label="Code">{branch.code ?? "—"}</td>
+                    <td className="px-3 py-2" data-label="Discount reason">
                       {settingLabel(branch.settings?.requireDiscountReason !== false)}
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-3 py-2" data-label="Transfer proof">
                       {settingLabel(branch.settings?.requireTransferProof === true)}
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-3 py-2" data-label="Credit sales">
                       {settingLabel(branch.settings?.allowCreditSales !== false)}
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-3 py-2" data-label="Split payments">
                       {settingLabel(branch.settings?.allowSplitPayments !== false)}
                     </td>
                   </tr>

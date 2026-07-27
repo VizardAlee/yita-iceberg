@@ -345,7 +345,10 @@ function BottomNavigation({
 
     const visibleCount = Math.max(
       1,
-      Math.floor((innerWidth - bottomItemWidth) / (bottomItemWidth + bottomItemGap)),
+      Math.min(
+        3,
+        Math.floor((innerWidth - bottomItemWidth) / (bottomItemWidth + bottomItemGap)),
+      ),
     );
 
     return {

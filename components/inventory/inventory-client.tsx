@@ -184,7 +184,7 @@ function InventoryList() {
           <input className="h-9 rounded-md border bg-background px-3" onChange={(event) => setSearch(event.target.value)} placeholder="Product or SKU" value={search} />
         </Field>
       </div>
-      <div className="overflow-x-auto rounded-lg border">
+      <div className="responsive-table-deck overflow-x-auto rounded-lg border">
         <table className="min-w-full text-left text-sm">
           <thead className="bg-muted text-xs uppercase text-muted-foreground">
             <tr><th className="px-3 py-2">Product</th><th className="px-3 py-2">On hand</th><th className="px-3 py-2">Reserved</th><th className="px-3 py-2">Available</th><th className="px-3 py-2">Reorder</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Updated</th><th className="px-3 py-2">Action</th></tr>
@@ -194,14 +194,14 @@ function InventoryList() {
               const available = item.onHandQty - item.reservedQty;
               return (
                 <tr key={item.id}>
-                  <td className="px-3 py-2"><div className="flex min-w-48 items-center gap-3"><ProductImage alt={item.productName ?? "Product"} className="size-12" path={item.imageStoragePath} version={item.imageUpdatedAt} /><div><p className="font-medium">{item.productName}</p><p className="text-xs text-muted-foreground">{item.sku} · {item.unit}</p></div></div></td>
-                  <td className="px-3 py-2">{formatQuantity(item.onHandQty)}</td>
-                  <td className="px-3 py-2">{formatQuantity(item.reservedQty)}</td>
-                  <td className="px-3 py-2 font-medium">{formatQuantity(available)}</td>
-                  <td className="px-3 py-2">{formatQuantity(item.reorderLevel ?? 0)}</td>
-                  <td className="px-3 py-2">{item.isLowStock ? <span className="rounded-md bg-amber-100 px-2 py-1 text-xs font-medium text-amber-900">Low stock</span> : <span className="rounded-md bg-secondary px-2 py-1 text-xs">Normal</span>} {item.isActive === false ? <span className="ml-1 rounded-md bg-red-100 px-2 py-1 text-xs text-red-900">Inactive</span> : null}</td>
-                  <td className="px-3 py-2">{timestampLabel(item.updatedAt)}</td>
-                  <td className="px-3 py-2"><Button asChild size="sm" variant="outline"><Link href={`/inventory/${item.id}`}>Ledger</Link></Button></td>
+                  <td className="px-3 py-2" data-deck-primary data-label="Product"><div className="flex min-w-0 items-center gap-3 sm:min-w-48"><ProductImage alt={item.productName ?? "Product"} className="size-12" path={item.imageStoragePath} version={item.imageUpdatedAt} /><div className="min-w-0"><p className="font-medium">{item.productName}</p><p className="text-xs text-muted-foreground">{item.sku} · {item.unit}</p></div></div></td>
+                  <td className="px-3 py-2" data-label="On hand">{formatQuantity(item.onHandQty)}</td>
+                  <td className="px-3 py-2" data-label="Reserved">{formatQuantity(item.reservedQty)}</td>
+                  <td className="px-3 py-2 font-medium" data-label="Available">{formatQuantity(available)}</td>
+                  <td className="px-3 py-2" data-label="Reorder">{formatQuantity(item.reorderLevel ?? 0)}</td>
+                  <td className="px-3 py-2" data-label="Status">{item.isLowStock ? <span className="rounded-md bg-amber-100 px-2 py-1 text-xs font-medium text-amber-900">Low stock</span> : <span className="rounded-md bg-secondary px-2 py-1 text-xs">Normal</span>} {item.isActive === false ? <span className="ml-1 rounded-md bg-red-100 px-2 py-1 text-xs text-red-900">Inactive</span> : null}</td>
+                  <td className="px-3 py-2" data-label="Updated">{timestampLabel(item.updatedAt)}</td>
+                  <td className="px-3 py-2" data-deck-actions data-label="Action"><Button asChild size="sm" variant="outline"><Link href={`/inventory/${item.id}`}>Ledger</Link></Button></td>
                 </tr>
               );
             })}
@@ -312,18 +312,18 @@ function Metric({ label, value }: { label: string; value: string }) {
 
 function LedgerTable({ movements }: { movements: StockMovementDocument[] }) {
   return (
-    <div className="overflow-x-auto rounded-lg border">
+    <div className="responsive-table-deck overflow-x-auto rounded-lg border">
       <table className="min-w-full text-left text-sm">
         <thead className="bg-muted text-xs uppercase text-muted-foreground"><tr><th className="px-3 py-2">Movement</th><th className="px-3 py-2">Qty</th><th className="px-3 py-2">On hand</th><th className="px-3 py-2">Reserved</th><th className="px-3 py-2">Reference</th><th className="px-3 py-2">Date</th></tr></thead>
         <tbody className="divide-y">
           {movements.map((movement) => (
             <tr key={movement.id}>
-              <td className="px-3 py-2">{movement.movementType.replaceAll("_", " ")}</td>
-              <td className="px-3 py-2">{movement.quantity}</td>
-              <td className="px-3 py-2">{movement.onHandBefore} → {movement.onHandAfter}</td>
-              <td className="px-3 py-2">{movement.reservedBefore} → {movement.reservedAfter}</td>
-              <td className="px-3 py-2">{movement.stockReceiptId || movement.adjustmentRequestId || movement.stockCountId || movement.orderId || "None"}</td>
-              <td className="px-3 py-2">{timestampLabel(movement.createdAt)}</td>
+              <td className="px-3 py-2" data-deck-primary data-label="Movement">{movement.movementType.replaceAll("_", " ")}</td>
+              <td className="px-3 py-2" data-label="Quantity">{movement.quantity}</td>
+              <td className="px-3 py-2" data-label="On hand">{movement.onHandBefore} → {movement.onHandAfter}</td>
+              <td className="px-3 py-2" data-label="Reserved">{movement.reservedBefore} → {movement.reservedAfter}</td>
+              <td className="px-3 py-2" data-label="Reference">{movement.stockReceiptId || movement.adjustmentRequestId || movement.stockCountId || movement.orderId || "None"}</td>
+              <td className="px-3 py-2" data-label="Date">{timestampLabel(movement.createdAt)}</td>
             </tr>
           ))}
         </tbody>
@@ -469,7 +469,7 @@ function StockReceiptDetail({ receiptId }: { receiptId: string }) {
         <Metric label="Received" value={timestampLabel(receipt.receivedAt)} />
         <Metric label="Total value" value={formatNairaFromKobo(receipt.totalValueKobo)} />
       </div>
-      <div className="overflow-x-auto rounded-lg border bg-card">
+      <div className="responsive-table-deck overflow-x-auto rounded-lg border bg-card">
         <table className="min-w-full text-left text-sm">
           <thead className="bg-muted text-xs uppercase text-muted-foreground">
             <tr>
@@ -482,10 +482,10 @@ function StockReceiptDetail({ receiptId }: { receiptId: string }) {
           <tbody className="divide-y">
             {receipt.items.map((item) => (
               <tr key={item.productId}>
-                <td className="px-3 py-2"><p className="font-medium">{item.productName}</p><p className="text-xs text-muted-foreground">{item.sku}</p></td>
-                <td className="px-3 py-2">{formatQuantity(item.quantity)}</td>
-                <td className="px-3 py-2">{formatNairaFromKobo(item.unitCostKobo)}</td>
-                <td className="px-3 py-2 font-medium">{formatNairaFromKobo(item.lineValueKobo)}</td>
+                <td className="px-3 py-2" data-deck-primary data-label="Product"><p className="font-medium">{item.productName}</p><p className="text-xs text-muted-foreground">{item.sku}</p></td>
+                <td className="px-3 py-2" data-label="Quantity">{formatQuantity(item.quantity)}</td>
+                <td className="px-3 py-2" data-label="Unit cost">{formatNairaFromKobo(item.unitCostKobo)}</td>
+                <td className="px-3 py-2 font-medium" data-label="Line value">{formatNairaFromKobo(item.lineValueKobo)}</td>
               </tr>
             ))}
           </tbody>
