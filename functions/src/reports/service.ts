@@ -298,6 +298,30 @@ function completedSaleOrders(orders: Record<string, unknown>[]) {
   return orders.filter((order) => ["completed", "partially_reversed", "reversed"].includes(text(order.status)));
 }
 
+function buildDailySales(range: DateRange, orders: Record<string, unknown>[]) {
+  const points = new Map<string, { date: string; salesKobo: number; completedOrders: number }>();
+  const cursor = new Date(`${range.startDate}T00:00:00.000Z`);
+  const end = new Date(`${range.endDate}T00:00:00.000Z`);
+
+  while (cursor <= end) {
+    const date = cursor.toISOString().slice(0, 10);
+    points.set(date, { date, salesKobo: 0, completedOrders: 0 });
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+
+  for (const order of completedSaleOrders(orders)) {
+    const date = iso(order.createdAt)?.slice(0, 10);
+    const point = date ? points.get(date) : undefined;
+    if (!point) continue;
+    point.completedOrders += 1;
+    if (order.status !== "reversed") {
+      point.salesKobo += positiveInt(order.grandTotalKobo);
+    }
+  }
+
+  return Array.from(points.values());
+}
+
 function applyOrderFilters(orders: Record<string, unknown>[], filters: Record<string, unknown>) {
   return orders.filter((order) => {
     if (typeof filters.status === "string" && order.status !== filters.status) return false;
@@ -701,14 +725,15 @@ async function dashboardSummary(actor: ActorProfile, input: ReportInput): Promis
   const range = parseDateRange(input, "today");
   const scope = await resolveBranchScope(actor, input);
   if (managementRoles.includes(actor.platformRole)) {
-    const [sales, payments, reversals, inventory] = await Promise.all([
+    const [sales, payments, reversals, inventory, periodOrders] = await Promise.all([
       salesReport(actor, { ...input, startDate: range.startDate, endDate: range.endDate, branchScope: scope.branchScope, branchId: scope.requestedBranchId }, "today"),
       paymentReport(actor, { ...input, startDate: range.startDate, endDate: range.endDate, branchScope: scope.branchScope, branchId: scope.requestedBranchId }),
       reversalReport(actor, { ...input, startDate: range.startDate, endDate: range.endDate, branchScope: scope.branchScope, branchId: scope.requestedBranchId }),
       inventoryReport(actor, { ...input, branchScope: scope.branchScope, branchId: scope.requestedBranchId, pageSize: 100 }),
+      queryOrders(range, scope.branchIds),
     ]);
-    const pendingOrders = (await queryOrders(range, scope.branchIds)).filter((order) => order.status === "awaiting_payment").length;
-    const paidUnreleasedOrders = (await queryOrders(range, scope.branchIds)).filter((order) => order.status === "awaiting_release").length;
+    const pendingOrders = periodOrders.filter((order) => order.status === "awaiting_payment").length;
+    const paidUnreleasedOrders = periodOrders.filter((order) => order.status === "awaiting_release").length;
     return {
       summary: {
         salesTodayKobo: positiveInt(sales.summary.netCompletedSalesKobo),
@@ -723,6 +748,9 @@ async function dashboardSummary(actor: ActorProfile, input: ReportInput): Promis
         lowStockCount: positiveInt(inventory.summary.lowStockCount),
         inventoryValueKobo: includeSensitiveFinancials(actor) ? positiveInt(inventory.summary.stockValueKobo) : undefined,
         branchComparison: scope.branchScope === "all_branches" ? buildBranchComparison(sales.rows, payments.rows) : [],
+        dailySales: buildDailySales(range, periodOrders),
+        periodStart: range.startDate,
+        periodEnd: range.endDate,
       },
       rows: [],
       nextPageCursor: null,

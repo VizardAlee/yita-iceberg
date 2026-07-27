@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { type ComponentType, type SVGProps, useEffect, useMemo, useState } from "react";
+import { type ComponentType, type SVGProps, useEffect, useMemo, useRef, useState } from "react";
 import {
   IconCash,
+  IconCalendarStats,
   IconClipboardList,
   IconDownload,
   IconRefresh,
@@ -56,6 +57,46 @@ type WorkflowCard = {
 
 const today = new Date().toISOString().slice(0, 10);
 const monthStart = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-01`;
+const maximumDashboardRangeDays = 93;
+
+type DashboardDatePreset = "today" | "last_7_days" | "last_30_days" | "month_to_date" | "custom";
+
+type DailySalesPoint = {
+  date: string;
+  salesKobo: number;
+  completedOrders: number;
+};
+
+function daysAgoIso(daysAgo: number) {
+  const date = new Date(`${today}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() - daysAgo);
+  return date.toISOString().slice(0, 10);
+}
+
+function dashboardDateRangeError(startDate: string, endDate: string) {
+  const start = new Date(`${startDate}T00:00:00.000Z`);
+  const end = new Date(`${endDate}T00:00:00.000Z`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return "Choose a valid start and end date.";
+  if (start > end) return "Start date must be before or equal to end date.";
+  const days = Math.floor((end.getTime() - start.getTime()) / 86_400_000) + 1;
+  if (days > maximumDashboardRangeDays) return `Choose a range of ${maximumDashboardRangeDays} days or less.`;
+  return null;
+}
+
+function dashboardRangeLabel(startDate: string, endDate: string) {
+  const format = (value: string) =>
+    new Date(`${value}T00:00:00.000Z`).toLocaleDateString("en-NG", {
+      day: "numeric",
+      month: "short",
+      year: startDate.slice(0, 4) !== endDate.slice(0, 4) ? "numeric" : undefined,
+      timeZone: "UTC",
+    });
+  return startDate === endDate ? format(startDate) : `${format(startDate)} - ${format(endDate)}`;
+}
+
+function numberValue(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
 
 export const reportConfigs: Record<Exclude<ReportType, "dashboard">, ReportConfig> = {
   sales: {
@@ -447,39 +488,84 @@ export function DashboardClient() {
   const admin = isAdminRole(user.platformRole);
   const management = ["branch_manager", "admin", "super_admin"].includes(user.platformRole);
   const [branchScope, setBranchScope] = useState<BranchScope>(admin ? "all_branches" : "selected_branch");
+  const [startDate, setStartDate] = useState(monthStart);
+  const [endDate, setEndDate] = useState(today);
+  const [draftStartDate, setDraftStartDate] = useState(monthStart);
+  const [draftEndDate, setDraftEndDate] = useState(today);
+  const [datePreset, setDatePreset] = useState<DashboardDatePreset>("month_to_date");
   const [data, setData] = useState<ReportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [dateError, setDateError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const requestId = useRef(0);
   const blocked = management && branchScope === "selected_branch" && !selectedBranchId;
 
   async function load() {
     if (!management || blocked) return;
+    const currentRequest = ++requestId.current;
+    setLoading(true);
     setError(null);
     try {
       const result = await callFunction<Record<string, unknown>, ReportResult>("getDashboardSummary", {
-        ...reportInput(selectedBranchId, branchScope, today, today),
+        ...reportInput(selectedBranchId, branchScope, startDate, endDate),
       });
-      setData(result);
+      if (currentRequest === requestId.current) setData(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to load dashboard.");
+      if (currentRequest === requestId.current) {
+        setError(err instanceof Error ? err.message : "Unable to load dashboard.");
+      }
+    } finally {
+      if (currentRequest === requestId.current) setLoading(false);
     }
   }
 
-  useEffect(() => { void load(); }, [branchScope, management, selectedBranchId]);
+  useEffect(() => { void load(); }, [branchScope, endDate, management, selectedBranchId, startDate]);
 
-  const metrics = [
-    ["salesTodayKobo", "Sales today", true],
+  const periodMetrics = [
+    ["salesTodayKobo", "Net sales", true],
     ["completedOrdersToday", "Completed orders", false],
-    ["pendingUnpaidOrders", "Pending unpaid", false],
-    ["paidButUnreleasedOrders", "Paid unreleased", false],
     ["cashReceivedKobo", "Cash", true],
     ["transferReceivedKobo", "Transfer", true],
     ["posReceivedKobo", "POS", true],
     ["creditSalesKobo", "Credit sales", true],
     ["reversalRefundValueKobo", "Internal refunds", true],
+  ] as const;
+  const operationsMetrics = [
+    ["pendingUnpaidOrders", "Pending unpaid", false],
+    ["paidButUnreleasedOrders", "Paid unreleased", false],
     ["lowStockCount", "Low stock", false],
     ["inventoryValueKobo", "Inventory value", true],
-  ];
+  ] as const;
+  const dailySales = Array.isArray(data?.summary.dailySales)
+    ? data.summary.dailySales.map((point) => point as DailySalesPoint)
+    : [];
+  const appliedRangeLabel = dashboardRangeLabel(startDate, endDate);
   const roleGuide = roleGuides[user.platformRole];
+
+  function applyDateRange(nextStartDate: string, nextEndDate: string, preset: DashboardDatePreset) {
+    const validationError = dashboardDateRangeError(nextStartDate, nextEndDate);
+    setDateError(validationError);
+    if (validationError) return;
+    setDraftStartDate(nextStartDate);
+    setDraftEndDate(nextEndDate);
+    setDatePreset(preset);
+    setStartDate(nextStartDate);
+    setEndDate(nextEndDate);
+  }
+
+  function applyPreset(preset: Exclude<DashboardDatePreset, "custom">) {
+    const ranges: Record<Exclude<DashboardDatePreset, "custom">, [string, string]> = {
+      today: [today, today],
+      last_7_days: [daysAgoIso(6), today],
+      last_30_days: [daysAgoIso(29), today],
+      month_to_date: [monthStart, today],
+    };
+    applyDateRange(...ranges[preset], preset);
+  }
+
+  function applyCustomRange() {
+    applyDateRange(draftStartDate, draftEndDate, "custom");
+  }
 
   return (
     <div className="space-y-5">
@@ -487,58 +573,237 @@ export function DashboardClient() {
         <div>
           <h1 className="text-2xl font-semibold tracking-normal">Dashboard</h1>
           <p className="text-sm text-muted-foreground">
-            {management ? "Operational visibility for today." : roleGuide.summary}
+            {management ? `Sales performance for ${appliedRangeLabel}.` : roleGuide.summary}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <DashboardGuide role={user.platformRole} uid={user.uid} />
-          {management ? <Button onClick={() => void load()} type="button" variant="outline"><IconRefresh />Refresh</Button> : null}
+          {management ? <Button disabled={loading} onClick={() => void load()} type="button" variant="outline"><IconRefresh />{loading ? "Refreshing" : "Refresh"}</Button> : null}
           {management ? <Button asChild><Link href="/reports"><IconChartBar />Reports</Link></Button> : null}
         </div>
       </div>
       <RoleWorkflowOverview role={user.platformRole} />
       {management ? (
         <>
-          <div className="app-surface grid gap-3 rounded-xl border p-4 md:grid-cols-3">
-            <BranchScopeSelector branchScope={branchScope} setBranchScope={setBranchScope} />
+          <div className="app-surface space-y-4 rounded-xl border p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="rounded-lg border bg-secondary p-2 text-muted-foreground">
+                  <IconCalendarStats aria-hidden="true" className="size-5" />
+                </span>
+                <div>
+                  <p className="font-semibold">Reporting period</p>
+                  <p className="text-sm text-muted-foreground">{appliedRangeLabel}</p>
+                </div>
+              </div>
+              <div aria-label="Date range presets" className="flex flex-wrap gap-1 rounded-lg border bg-muted/60 p-1" role="group">
+                {([
+                  ["today", "Today"],
+                  ["last_7_days", "7 days"],
+                  ["last_30_days", "30 days"],
+                  ["month_to_date", "This month"],
+                ] as const).map(([preset, label]) => (
+                  <Button
+                    aria-pressed={datePreset === preset}
+                    key={preset}
+                    onClick={() => applyPreset(preset)}
+                    size="sm"
+                    type="button"
+                    variant={datePreset === preset ? "default" : "ghost"}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="grid items-end gap-3 md:grid-cols-2 xl:grid-cols-5">
+              <ReportDateRangePicker
+                endDate={draftEndDate}
+                setEndDate={(value) => {
+                  setDraftEndDate(value);
+                  setDatePreset("custom");
+                }}
+                setStartDate={(value) => {
+                  setDraftStartDate(value);
+                  setDatePreset("custom");
+                }}
+                startDate={draftStartDate}
+              />
+              <BranchScopeSelector branchScope={branchScope} setBranchScope={setBranchScope} />
+              <Button disabled={loading} onClick={applyCustomRange} type="button">
+                <IconChartBar />Apply
+              </Button>
+            </div>
+            {dateError ? <p className="text-sm font-medium text-destructive">{dateError}</p> : null}
           </div>
           {blocked ? <OperationState detail="Choose a branch or switch to all branches." title="Branch required" /> : null}
           {error ? <ReportPermissionDenied detail={error} /> : null}
-          <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-4">
-            {metrics.map(([key, label, money]) => (
-              <SummaryMetricCard key={String(key)} label={String(label)} money={Boolean(money)} value={data?.summary[String(key)]} />
-            ))}
+          <section className="space-y-3">
+            <div>
+              <h2 className="text-lg font-semibold tracking-normal">Sales performance</h2>
+              <p className="text-sm text-muted-foreground">{appliedRangeLabel} across the selected scope.</p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-4">
+              {periodMetrics.map(([key, label, money]) => (
+                <SummaryMetricCard key={key} label={label} money={money} value={data?.summary[key]} />
+              ))}
+            </div>
+          </section>
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,1.6fr)_minmax(280px,0.8fr)]">
+            <DailySalesChart points={dailySales} rangeLabel={appliedRangeLabel} />
+            <PaymentMixChart summary={data?.summary ?? {}} />
           </div>
+          <section className="space-y-3">
+            <div>
+              <h2 className="text-lg font-semibold tracking-normal">Operations and inventory</h2>
+              <p className="text-sm text-muted-foreground">Open workflow items for the period and current stock position.</p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              {operationsMetrics.map(([key, label, money]) => (
+                <SummaryMetricCard key={key} label={label} money={money} value={data?.summary[key]} />
+              ))}
+            </div>
+          </section>
+          {Array.isArray(data?.summary.branchComparison) && data.summary.branchComparison.length > 0 ? (
+            <BranchComparisonTable rows={data.summary.branchComparison as Record<string, unknown>[]} />
+          ) : null}
         </>
       ) : !branchLoading && !selectedBranchId ? (
         <OperationState detail="Ask an administrator to assign your account to a branch before starting work." title="Branch assignment required" />
       ) : null}
       <WorkflowLinks role={user.platformRole} />
-      {management && Array.isArray(data?.summary.branchComparison) && data.summary.branchComparison.length > 0 ? (
-        <BranchComparisonTable rows={data.summary.branchComparison as Record<string, unknown>[]} />
-      ) : null}
     </div>
+  );
+}
+
+function DailySalesChart({ points, rangeLabel }: { points: DailySalesPoint[]; rangeLabel: string }) {
+  const maximumSales = Math.max(...points.map((point) => numberValue(point.salesKobo)), 0);
+  const hasSales = maximumSales > 0;
+
+  return (
+    <section className="app-surface min-w-0 rounded-xl border p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="font-semibold">Net sales trend</h2>
+          <p className="text-sm text-muted-foreground">{rangeLabel}</p>
+        </div>
+        <IconChartBar aria-hidden="true" className="size-5 text-muted-foreground" />
+      </div>
+      {!hasSales ? (
+        <div className="flex h-56 items-center justify-center text-center text-sm text-muted-foreground">
+          No completed sales in this period.
+        </div>
+      ) : (
+        <div
+          aria-label={`Daily net sales chart for ${rangeLabel}`}
+          className="mt-5 overflow-x-auto pb-1"
+          role="img"
+        >
+          <div
+            className="grid h-56 items-end gap-2"
+            style={{
+              gridTemplateColumns: `repeat(${points.length}, minmax(36px, 1fr))`,
+              minWidth: `${Math.max(100, points.length * 44)}px`,
+            }}
+          >
+            {points.map((point) => {
+              const sales = numberValue(point.salesKobo);
+              const height = sales > 0 ? Math.max(4, Math.round((sales / maximumSales) * 100)) : 0;
+              const date = new Date(`${point.date}T00:00:00.000Z`);
+              return (
+                <div className="grid h-full grid-rows-[1fr_auto] gap-2" key={point.date}>
+                  <div className="flex min-h-0 items-end justify-center border-b border-border/70">
+                    <div
+                      aria-label={`${date.toLocaleDateString("en-NG", { dateStyle: "medium", timeZone: "UTC" })}: ${formatNairaFromKobo(point.salesKobo)}`}
+                      className="w-full max-w-10 rounded-t-md bg-primary transition-[height] duration-300"
+                      style={{ height: `${height}%` }}
+                      title={`${date.toLocaleDateString("en-NG", { dateStyle: "medium", timeZone: "UTC" })}: ${formatNairaFromKobo(point.salesKobo)} from ${point.completedOrders} completed order${point.completedOrders === 1 ? "" : "s"}`}
+                    />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs font-semibold">{date.toLocaleDateString("en-NG", { day: "numeric", timeZone: "UTC" })}</p>
+                    <p className="text-[0.68rem] text-muted-foreground">{date.toLocaleDateString("en-NG", { month: "short", timeZone: "UTC" })}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function PaymentMixChart({ summary }: { summary: Record<string, unknown> }) {
+  const methods = [
+    { key: "cashReceivedKobo", label: "Cash", color: "bg-[#0b2b50]" },
+    { key: "transferReceivedKobo", label: "Transfer", color: "bg-[#2f7d78]" },
+    { key: "posReceivedKobo", label: "POS", color: "bg-[#b38b45]" },
+    { key: "creditSalesKobo", label: "Credit", color: "bg-[#8e5d78]" },
+  ].map((method) => ({ ...method, value: numberValue(summary[method.key]) }));
+  const total = methods.reduce((sum, method) => sum + method.value, 0);
+
+  return (
+    <section className="app-surface rounded-xl border p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="font-semibold">Payment mix</h2>
+          <p className="text-sm text-muted-foreground">Confirmed payments and credit sales.</p>
+        </div>
+        <IconCash aria-hidden="true" className="size-5 text-muted-foreground" />
+      </div>
+      <p className="mt-5 text-2xl font-semibold tracking-normal">{formatNairaFromKobo(total)}</p>
+      <div aria-label="Payment method distribution" className="mt-4 flex h-3 overflow-hidden rounded-full bg-muted" role="img">
+        {methods.map((method) => (
+          method.value > 0 ? (
+            <span
+              className={method.color}
+              key={method.key}
+              style={{ width: `${(method.value / total) * 100}%` }}
+              title={`${method.label}: ${formatNairaFromKobo(method.value)}`}
+            />
+          ) : null
+        ))}
+      </div>
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+        {methods.map((method) => (
+          <div className="flex items-center justify-between gap-3 text-sm" key={method.key}>
+            <span className="flex items-center gap-2 text-muted-foreground">
+              <span className={`size-2.5 rounded-sm ${method.color}`} />
+              {method.label}
+            </span>
+            <span className="font-semibold">{formatNairaFromKobo(method.value)}</span>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
 function BranchComparisonTable({ rows }: { rows: Record<string, unknown>[] }) {
   return (
-    <div className="app-surface overflow-x-auto rounded-xl border">
-      <table className="min-w-full text-left text-sm">
-        <thead className="bg-muted text-xs uppercase text-muted-foreground">
-          <tr><th className="px-3 py-2">Branch</th><th className="px-3 py-2">Sales</th><th className="px-3 py-2">Received</th></tr>
-        </thead>
-        <tbody className="divide-y">
-          {rows.map((row) => (
-            <tr key={String(row.branchId)}>
-              <td className="px-3 py-2 font-medium">{moneyOrValue(row.branch)}</td>
-              <td className="px-3 py-2">{moneyOrValue(row.salesKobo, true)}</td>
-              <td className="px-3 py-2">{moneyOrValue(row.receivedKobo, true)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <section className="space-y-3">
+      <div>
+        <h2 className="text-lg font-semibold tracking-normal">Branch comparison</h2>
+        <p className="text-sm text-muted-foreground">Sales and confirmed receipts across active locations.</p>
+      </div>
+      <div className="app-surface overflow-x-auto rounded-xl border">
+        <table className="min-w-full text-left text-sm">
+          <thead className="bg-muted text-xs uppercase text-muted-foreground">
+            <tr><th className="px-3 py-2">Branch</th><th className="px-3 py-2">Sales</th><th className="px-3 py-2">Received</th></tr>
+          </thead>
+          <tbody className="divide-y">
+            {rows.map((row) => (
+              <tr key={String(row.branchId)}>
+                <td className="px-3 py-2 font-medium">{moneyOrValue(row.branch)}</td>
+                <td className="px-3 py-2">{moneyOrValue(row.salesKobo, true)}</td>
+                <td className="px-3 py-2">{moneyOrValue(row.receivedKobo, true)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 

@@ -325,6 +325,13 @@ describe("report authorization and summaries", () => {
   it("allows branch managers to fetch their branch dashboard and blocks other branches", async () => {
     const dashboard = await getDashboardSummaryAction("manager-a", input);
     expect(dashboard.summary.completedOrdersToday).toBe(3);
+    expect(dashboard.summary.dailySales).toEqual([
+      {
+        date: "2026-07-08",
+        salesKobo: 300_000,
+        completedOrders: 3,
+      },
+    ]);
     expect(dashboard.branchIds).toEqual(["branch-a"]);
     await expect(getDashboardSummaryAction("manager-a", { ...input, branchId: "branch-b" })).rejects.toMatchObject({ code: "permission-denied" });
   });
