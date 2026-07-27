@@ -44,7 +44,7 @@ test("sign-in is keyboard accessible and has no serious accessibility violations
 });
 
 test("public pages fit the viewport without horizontal scrolling", async ({ page }) => {
-  for (const path of ["/", "/sign-in", "/privacy"]) {
+  for (const path of ["/", "/sign-in", "/forgot-password", "/privacy"]) {
     await gotoStable(page, path);
     await expect(page.locator("body")).toBeVisible();
     const hasOverflow = await page.locator("html").evaluate(
@@ -74,7 +74,12 @@ test("authentication pages are excluded from search indexing", async ({ page }) 
 test("staff can request password reset instructions", async ({ page }) => {
   await page.goto("/sign-in");
   await page.getByLabel("Email").fill("admin@example.test");
-  await page.getByRole("button", { name: "Forgot password?" }).click();
+  await page.getByRole("link", { name: "Forgot password?" }).click();
+  await expect(page).toHaveURL(
+    /\/forgot-password\?email=admin%40example\.test$/,
+  );
+  await expect(page.getByLabel("Email")).toHaveValue("admin@example.test");
+  await page.getByRole("button", { name: "Send reset link" }).click();
   await expect(
     page.getByText(
       "If this email belongs to an active staff account, password reset instructions have been sent.",

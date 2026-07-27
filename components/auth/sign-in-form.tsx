@@ -1,11 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import {
-  sendPasswordResetEmail,
-  signInWithEmailAndPassword,
-  signOut,
-} from "firebase/auth";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -18,14 +15,11 @@ export function SignInForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [resetMessage, setResetMessage] = useState<string | null>(null);
-  const [isResetting, setIsResetting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    setResetMessage(null);
 
     const parsed = signInSchema.safeParse({ email, password });
 
@@ -65,34 +59,6 @@ export function SignInForm() {
     }
   }
 
-  async function handlePasswordReset() {
-    setError(null);
-    setResetMessage(null);
-
-    const parsedEmail = signInSchema.shape.email.safeParse(email);
-    if (!parsedEmail.success) {
-      setError("Enter a valid staff email address before requesting a password reset.");
-      return;
-    }
-    const normalizedEmail = parsedEmail.data.toLowerCase();
-
-    setIsResetting(true);
-
-    try {
-      const { auth } = getFirebaseServices();
-      await sendPasswordResetEmail(auth, normalizedEmail);
-      setResetMessage(
-        "If this email belongs to an active staff account, password reset instructions have been sent.",
-      );
-    } catch {
-      setError(
-        "We could not request a password reset right now. Try again or contact your administrator.",
-      );
-    } finally {
-      setIsResetting(false);
-    }
-  }
-
   return (
     <form className="space-y-5" onSubmit={handleSubmit}>
       <div className="space-y-2">
@@ -113,9 +79,21 @@ export function SignInForm() {
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium" htmlFor="password">
-          Password
-        </label>
+        <div className="flex items-center justify-between gap-4">
+          <label className="text-sm font-medium" htmlFor="password">
+            Password
+          </label>
+          <Link
+            className="inline-flex min-h-11 items-center text-sm font-semibold text-primary underline-offset-4 hover:underline"
+            href={
+              email.trim()
+                ? `/forgot-password?email=${encodeURIComponent(email.trim())}`
+                : "/forgot-password"
+            }
+          >
+            Forgot password?
+          </Link>
+        </div>
         <input
           autoComplete="current-password"
           className="h-11 w-full rounded-md border bg-background px-3 text-sm outline-none ring-offset-background transition focus-visible:ring-2 focus-visible:ring-ring"
@@ -134,27 +112,9 @@ export function SignInForm() {
         </p>
       ) : null}
 
-      {resetMessage ? (
-        <p
-          aria-live="polite"
-          className="rounded-md border border-emerald-700/25 bg-emerald-50 px-3 py-2 text-sm text-emerald-900"
-        >
-          {resetMessage}
-        </p>
-      ) : null}
-
       <Button className="w-full" disabled={isSubmitting} type="submit">
         {isSubmitting ? "Signing in..." : "Sign in"}
       </Button>
-
-      <button
-        className="min-h-11 w-full text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline disabled:cursor-not-allowed disabled:opacity-60"
-        disabled={isResetting || isSubmitting}
-        onClick={handlePasswordReset}
-        type="button"
-      >
-        {isResetting ? "Requesting reset..." : "Forgot password?"}
-      </button>
     </form>
   );
 }
