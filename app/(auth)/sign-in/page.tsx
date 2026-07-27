@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 
 import { SignInForm } from "@/components/auth/sign-in-form";
 import { getCurrentUser } from "@/lib/server/auth/session";
@@ -25,10 +26,15 @@ export default async function SignInPage() {
           />
           <h1 className="text-3xl font-semibold tracking-normal">Sign in</h1>
           <p className="text-sm leading-6 text-muted-foreground">
-            Staff accounts are created by an administrator.
+            Authorized staff accounts are created by an administrator.
           </p>
         </div>
         <SignInForm />
+        <p className="text-center text-sm text-muted-foreground">
+          <Link className="underline-offset-4 hover:text-foreground hover:underline" href="/">
+            Return to YITA Iceberg
+          </Link>
+        </p>
       </section>
     </main>
   );

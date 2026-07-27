@@ -1,10 +1,10 @@
 const controls = [
-  "Role-based access",
-  "Branch isolation",
-  "Protected inventory",
-  "Audit logs",
-  "No direct stock tampering",
-  "Secure payment proof handling",
+  "Role-aware workspaces",
+  "Branch-level visibility",
+  "Controlled records",
+  "Activity history",
+  "Review checkpoints",
+  "Protected account access",
 ];
 
 export function SecuritySection() {
@@ -20,7 +20,9 @@ export function SecuritySection() {
               Luxury presentation, operational restraint.
             </h2>
             <p className="mt-5 text-base leading-7 text-[#1d2430]/72">
-              The interface is designed around control points that protect jewelry stock, staff accountability, and transaction evidence.
+              The portal gives each team member the tools required for their
+              role while keeping operational records available to authorized
+              reviewers.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">

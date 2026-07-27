@@ -1,5 +1,15 @@
+import type { Metadata } from "next";
+
 import { AppShell } from "@/components/layout/app-shell";
 import { requireActiveUser } from "@/lib/server/auth/session";
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+    noarchive: true,
+  },
+};
 
 export default async function ProtectedAppLayout({
   children,

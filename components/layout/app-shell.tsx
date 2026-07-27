@@ -71,13 +71,13 @@ export function AppShell({
                 <SignOutButton />
               </div>
             </header>
-            <main className="flex-1 px-4 py-5 pb-28 sm:px-6 lg:px-7 lg:pb-7 lg:pt-2">
+            <main className="flex-1 px-4 py-5 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-7 lg:pb-7 lg:pt-2">
               <div className="mx-auto w-full max-w-[1500px]">{children}</div>
             </main>
           </div>
         </div>
 
-        <div className="mobile-bottom-nav fixed inset-x-0 bottom-0 z-50 border-t pb-[env(safe-area-inset-bottom)] lg:hidden">
+        <div className="mobile-bottom-nav fixed inset-x-0 bottom-0 z-50 min-h-16 border-t pb-[env(safe-area-inset-bottom)] lg:hidden">
           <AppNavigation role={user.platformRole} placement="bottom" />
         </div>
       </div>

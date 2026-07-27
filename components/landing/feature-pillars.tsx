@@ -57,7 +57,7 @@ export function FeaturePillars() {
             Each capability is designed to protect stock, prove decisions, and keep branch work fast.
           </p>
         </div>
-        <div className="mt-10 grid auto-cols-[82%] grid-flow-col gap-4 overflow-x-auto pb-4 md:grid-flow-row md:grid-cols-2 md:overflow-visible lg:grid-cols-3">
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature) => (
             <article
               className="rounded-3xl border border-white/10 bg-white/[0.055] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.18)] transition hover:-translate-y-1 hover:border-[#c8a45d]/45"

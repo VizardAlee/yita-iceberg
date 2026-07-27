@@ -147,6 +147,8 @@
   html {
     @apply font-sans;
     scroll-behavior: smooth;
+    text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
   }
   ::selection {
     background: oklch(0.87 0.09 86 / 42%);
@@ -266,6 +268,7 @@
   .bottom-more-sheet {
     animation: bottom-more-sheet-up 180ms cubic-bezier(0.22, 1, 0.36, 1);
     transform-origin: bottom center;
+    touch-action: pan-y;
   }
 }
 
@@ -292,6 +295,14 @@
 
   .bottom-more-sheet {
     animation: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px;
   }
 }
 

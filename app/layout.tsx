@@ -1,5 +1,12 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#eef4f9",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_BASE_URL || "http://localhost:3000"),
@@ -27,7 +34,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html
+      className="h-full antialiased"
+      data-scroll-behavior="smooth"
+      lang="en"
+    >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

@@ -182,7 +182,7 @@ export function DashboardGuide({ role, uid }: { role: PlatformRole; uid: string 
             aria-describedby="dashboard-guide-description"
             aria-labelledby="dashboard-guide-title"
             aria-modal="true"
-            className="bottom-more-sheet liquid-glass w-full border-t p-5 shadow-2xl sm:max-w-xl sm:rounded-xl sm:border"
+            className="bottom-more-sheet liquid-glass max-h-[100dvh] w-full overflow-y-auto border-t p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-2xl sm:max-w-xl sm:rounded-xl sm:border sm:pb-5"
             role="dialog"
           >
             <div className="flex items-start justify-between gap-4">

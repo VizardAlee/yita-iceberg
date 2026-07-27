@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { createPortal } from "react-dom";
 import {
   type ComponentType,
   type SVGProps,
@@ -25,6 +26,7 @@ import {
   IconShieldCheck,
   IconUserCircle,
   IconUsers,
+  IconX,
 } from "@tabler/icons-react";
 
 import type { PlatformRole } from "@/lib/domain/roles";
@@ -242,8 +244,14 @@ function BottomNavigation({
 }) {
   const navRef = useRef<HTMLElement | null>(null);
   const moreRef = useRef<HTMLDivElement | null>(null);
+  const moreButtonRef = useRef<HTMLButtonElement | null>(null);
   const [availableWidth, setAvailableWidth] = useState(0);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const nav = navRef.current;
@@ -268,28 +276,57 @@ function BottomNavigation({
   useEffect(() => {
     if (!moreOpen) return;
 
-    function closeOnOutsideClick(event: MouseEvent) {
-      if (
-        moreRef.current &&
-        event.target instanceof Node &&
-        !moreRef.current.contains(event.target)
-      ) {
-        setMoreOpen(false);
-      }
-    }
+    const previousOverflow = document.body.style.overflow;
+    const previousDocumentOverflow =
+      document.documentElement.style.overflow;
+    const focusableSelector =
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-    function closeOnEscape(event: KeyboardEvent) {
+    function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setMoreOpen(false);
+        return;
+      }
+
+      if (event.key !== "Tab" || !moreRef.current) {
+        return;
+      }
+
+      const focusable = Array.from(
+        moreRef.current.querySelectorAll<HTMLElement>(focusableSelector),
+      );
+
+      if (focusable.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable.at(-1);
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
       }
     }
 
-    document.addEventListener("mousedown", closeOnOutsideClick);
-    document.addEventListener("keydown", closeOnEscape);
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    document.addEventListener("keydown", handleKeyDown);
+    window.requestAnimationFrame(() => {
+      moreRef.current
+        ?.querySelector<HTMLElement>(focusableSelector)
+        ?.focus();
+    });
 
     return () => {
-      document.removeEventListener("mousedown", closeOnOutsideClick);
-      document.removeEventListener("keydown", closeOnEscape);
+      document.body.style.overflow = previousOverflow;
+      document.documentElement.style.overflow = previousDocumentOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+      moreButtonRef.current?.focus();
     };
   }, [moreOpen]);
 
@@ -339,6 +376,7 @@ function BottomNavigation({
               (moreOpen || overflowActive) && "border-border bg-card text-foreground shadow-sm",
             )}
             onClick={() => setMoreOpen((open) => !open)}
+            ref={moreButtonRef}
             type="button"
           >
             <IconDots aria-hidden="true" className="size-5 shrink-0" />
@@ -347,57 +385,88 @@ function BottomNavigation({
         ) : null}
       </nav>
 
-      {moreOpen && overflowItems.length > 0 ? (
-        <div
-          aria-modal="true"
-          className="bottom-more-dialog fixed inset-0 z-[70] flex flex-col justify-end px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-6"
-          role="dialog"
-        >
-          <button
-            aria-label="Close navigation menu"
-            className="absolute inset-0 cursor-default bg-foreground/15 backdrop-blur-[2px]"
-            onClick={() => setMoreOpen(false)}
-            type="button"
-          />
-          <div
-            className="app-surface glass-edge bottom-more-sheet relative z-10 mx-auto mt-auto max-h-[min(62vh,26rem)] w-full max-w-sm overflow-y-auto rounded-2xl border p-2 text-sm shadow-2xl"
-            ref={moreRef}
-          >
-            <div className="px-3 pb-2 pt-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                More
-              </p>
-            </div>
-            {overflowItems.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.href);
-
-              return item.enabled ? (
-                <Link
-                  className={cn(
-                    "fluid-hover flex items-center gap-3 rounded-lg px-3 py-2 text-foreground hover:bg-secondary",
-                    active && "bg-primary text-primary-foreground",
-                  )}
-                  href={item.href}
-                  key={item.label}
-                >
-                  <Icon aria-hidden="true" className="size-4 shrink-0 opacity-70" />
-                  <span className="min-w-0 truncate">{item.label}</span>
-                </Link>
-              ) : (
-                <div
-                  aria-disabled="true"
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground opacity-55"
-                  key={item.label}
-                >
-                  <Icon aria-hidden="true" className="size-4 shrink-0" />
-                  <span className="min-w-0 truncate">{item.label}</span>
+      {mounted && moreOpen && overflowItems.length > 0
+        ? createPortal(
+            <div
+              aria-labelledby="more-navigation-title"
+              aria-modal="true"
+              className="bottom-more-dialog fixed inset-0 z-[100] flex min-h-[100dvh] flex-col justify-end p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-[calc(0.75rem+env(safe-area-inset-top))]"
+              role="dialog"
+            >
+              <button
+                aria-label="Close navigation menu"
+                className="absolute inset-0 cursor-default bg-slate-950/35 backdrop-blur-[2px]"
+                onClick={() => setMoreOpen(false)}
+                type="button"
+              />
+              <div
+                className="app-surface glass-edge bottom-more-sheet relative z-10 mx-auto max-h-[min(72dvh,34rem)] w-full max-w-md overscroll-contain rounded-2xl border p-3 text-sm shadow-2xl"
+                data-testid="bottom-more-sheet"
+                ref={moreRef}
+              >
+                <div className="mb-2 flex min-h-11 items-center justify-between gap-3 px-1">
+                  <div>
+                    <p
+                      className="text-sm font-semibold text-foreground"
+                      id="more-navigation-title"
+                    >
+                      More
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Additional workspaces
+                    </p>
+                  </div>
+                  <button
+                    aria-label="Close navigation menu"
+                    className="fluid-hover grid size-10 shrink-0 place-items-center rounded-lg border bg-card text-foreground hover:bg-secondary"
+                    onClick={() => setMoreOpen(false)}
+                    type="button"
+                  >
+                    <IconX aria-hidden="true" className="size-5" />
+                  </button>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
+                <div className="grid max-h-[calc(min(72dvh,34rem)-4.75rem)] grid-cols-2 gap-2 overflow-y-auto">
+                  {overflowItems.map((item) => {
+                    const Icon = item.icon;
+                    const active = isActive(item.href);
+
+                    return item.enabled ? (
+                      <Link
+                        className={cn(
+                          "fluid-hover flex min-h-16 min-w-0 items-center gap-3 rounded-lg border border-transparent bg-card px-3 py-2.5 text-foreground hover:border-border hover:bg-secondary",
+                          active &&
+                            "border-primary bg-primary text-primary-foreground",
+                        )}
+                        href={item.href}
+                        key={item.label}
+                      >
+                        <Icon
+                          aria-hidden="true"
+                          className="size-5 shrink-0 opacity-70"
+                        />
+                        <span className="min-w-0 text-left text-xs font-semibold leading-4">
+                          {item.label}
+                        </span>
+                      </Link>
+                    ) : (
+                      <div
+                        aria-disabled="true"
+                        className="flex min-h-16 min-w-0 items-center gap-3 rounded-lg px-3 py-2.5 text-muted-foreground opacity-55"
+                        key={item.label}
+                      >
+                        <Icon aria-hidden="true" className="size-5 shrink-0" />
+                        <span className="min-w-0 text-left text-xs font-semibold leading-4">
+                          {item.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </Fragment>
   );
 }
