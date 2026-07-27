@@ -82,10 +82,107 @@ test("staff can request password reset instructions", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("web app manifest exposes installable PWA metadata", async ({ request }) => {
+  const response = await request.get("/manifest.webmanifest");
+  expect(response.ok()).toBe(true);
+  expect(response.headers()["content-type"]).toContain(
+    "application/manifest+json",
+  );
+
+  const manifest = (await response.json()) as {
+    name?: string;
+    short_name?: string;
+    start_url?: string;
+    scope?: string;
+    display?: string;
+    icons?: Array<{ sizes?: string; purpose?: string }>;
+  };
+
+  expect(manifest.name).toBe("YITA Iceberg Staff Operations");
+  expect(manifest.short_name).toBe("YITA Iceberg");
+  expect(manifest.start_url).toBe("/sign-in");
+  expect(manifest.scope).toBe("/");
+  expect(manifest.display).toBe("standalone");
+  expect(manifest.icons).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ sizes: "192x192", purpose: "any" }),
+      expect.objectContaining({ sizes: "512x512", purpose: "any" }),
+      expect.objectContaining({ sizes: "512x512", purpose: "maskable" }),
+    ]),
+  );
+});
+
+test("service worker provides a safe network-only operational fallback", async ({
+  context,
+  page,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "desktop-chromium",
+    "The service-worker cache policy is verified once in Chromium.",
+  );
+
+  await page.goto("/");
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.register("/sw.js", {
+      scope: "/",
+      updateViaCache: "none",
+    });
+    await navigator.serviceWorker.ready;
+  });
+
+  await expect
+    .poll(() =>
+      page.evaluate(() => Boolean(navigator.serviceWorker.controller)),
+    )
+    .toBe(true);
+
+  try {
+    await context.setOffline(true);
+    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    await expect(
+      page.getByRole("heading", { name: "Connection unavailable" }),
+    ).toBeVisible();
+
+    const cachedPaths = await page.evaluate(async () => {
+      const paths: string[] = [];
+      for (const cacheName of await caches.keys()) {
+        const cache = await caches.open(cacheName);
+        for (const request of await cache.keys()) {
+          paths.push(new URL(request.url).pathname);
+        }
+      }
+      return paths;
+    });
+
+    expect(cachedPaths).toContain("/offline.html");
+    expect(cachedPaths.some((path) => path.startsWith("/api/"))).toBe(false);
+    expect(cachedPaths).not.toContain("/dashboard");
+  } finally {
+    await context.setOffline(false);
+    await page.evaluate(async () => {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((registration) => registration.unregister()));
+      await Promise.all(
+        (await caches.keys())
+          .filter((key) => key.startsWith("yita-iceberg-pwa-"))
+          .map((key) => caches.delete(key)),
+      );
+    });
+  }
+});
+
 test("security headers protect public responses", async ({ request }) => {
   const response = await request.get("/sign-in");
   expect(response.ok()).toBe(true);
   expect(response.headers()["x-content-type-options"]).toBe("nosniff");
   expect(response.headers()["x-frame-options"]).toBe("DENY");
   expect(response.headers()["referrer-policy"]).toBe("strict-origin-when-cross-origin");
+});
+
+test("service worker is served with update-safe headers", async ({ request }) => {
+  const response = await request.get("/sw.js");
+  expect(response.ok()).toBe(true);
+  expect(response.headers()["cache-control"]).toContain("no-cache");
+  expect(response.headers()["cache-control"]).toContain("no-store");
+  expect(response.headers()["service-worker-allowed"]).toBe("/");
 });

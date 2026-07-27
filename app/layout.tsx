@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+import { ServiceWorkerRegistration } from "@/components/pwa/service-worker-registration";
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -10,6 +12,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_BASE_URL || "http://localhost:3000"),
+  applicationName: "YITA Iceberg",
   title: "YITA Iceberg — Jewelry Trading & Secure Inventory Control",
   description:
     "Premium jewelry trading platform with controlled inventory, payment verification, release approval, branch oversight, and audit-ready reporting.",
@@ -26,6 +29,14 @@ export const metadata: Metadata = {
       "Premium jewelry trading platform with secure operational control.",
     images: ["/brand/yita-iceberg-logo.png"],
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "YITA Iceberg",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export default function RootLayout({
@@ -39,7 +50,10 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       lang="en"
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <ServiceWorkerRegistration />
+      </body>
     </html>
   );
 }
