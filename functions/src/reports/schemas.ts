@@ -5,6 +5,11 @@ const isoDate = z
   .trim()
   .regex(/^\d{4}-\d{2}-\d{2}$/);
 
+const optionalBranchId = z.preprocess(
+  (value) => value === null || value === "" ? undefined : value,
+  z.string().trim().min(1).optional(),
+);
+
 export const branchScopeSchema = z.enum(["selected_branch", "all_branches"]);
 
 export const reportTypeSchema = z.enum([
@@ -20,7 +25,7 @@ export const reportTypeSchema = z.enum([
 ]);
 
 export const reportInputSchema = z.object({
-  branchId: z.string().trim().min(1).optional(),
+  branchId: optionalBranchId,
   branchScope: branchScopeSchema.default("selected_branch"),
   startDate: isoDate.optional(),
   endDate: isoDate.optional(),

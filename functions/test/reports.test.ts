@@ -330,7 +330,11 @@ describe("report authorization and summaries", () => {
   });
 
   it("allows admins to fetch all-branch dashboard summaries", async () => {
-    const dashboard = await getDashboardSummaryAction("admin", { ...input, branchScope: "all_branches", branchId: undefined });
+    const dashboard = await getDashboardSummaryAction("admin", {
+      ...input,
+      branchScope: "all_branches",
+      branchId: null,
+    });
     expect(dashboard.branchScope).toBe("all_branches");
     expect(dashboard.branchIds).toContain("branch-a");
     expect(dashboard.branchIds).toContain("branch-b");

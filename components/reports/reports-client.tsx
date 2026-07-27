@@ -320,7 +320,7 @@ function moneyOrValue(value: unknown, money?: boolean) {
 
 function reportInput(branchId: string | null, branchScope: BranchScope, startDate: string, endDate: string, pageCursor?: string | null) {
   return {
-    branchId: branchScope === "selected_branch" ? branchId ?? undefined : undefined,
+    ...(branchScope === "selected_branch" && branchId ? { branchId } : {}),
     branchScope,
     startDate,
     endDate,

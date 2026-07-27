@@ -48,7 +48,7 @@ jobs:
         run: npm run verify:production
         env:
           APP_ENV: production
-          APP_BASE_URL: https://yita-iceberg--yita-iceberg.us-east4.hosted.app
+          APP_BASE_URL: https://yita.svoltnigeria.com
           FIREBASE_PROJECT_ID: yita-iceberg
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: yita-iceberg
           NEXT_PUBLIC_FIREBASE_API_KEY: AIzaSyD4ZKF5iemf_DQ49PbbAGSiJ9PFVM_5elk
@@ -83,7 +83,7 @@ jobs:
         run: npm run smoke:test
         env:
           APP_ENV: production
-          APP_BASE_URL: https://yita-iceberg--yita-iceberg.us-east4.hosted.app
+          APP_BASE_URL: https://yita.svoltnigeria.com
           FIREBASE_PROJECT_ID: yita-iceberg
           NEXT_PUBLIC_FIREBASE_API_KEY: AIzaSyD4ZKF5iemf_DQ49PbbAGSiJ9PFVM_5elk
           NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: yita-iceberg.firebaseapp.com
