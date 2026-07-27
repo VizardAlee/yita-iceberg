@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { YitaLogo } from "@/components/brand/yita-logo";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 export const metadata: Metadata = {
   title: "Privacy Notice | YITA Iceberg",
@@ -37,36 +38,43 @@ const sections = [
 
 export default function PrivacyPage() {
   return (
-    <main className="min-h-screen bg-[#f4f7fa] text-[#071426]">
-      <header className="border-b border-[#071426]/10 bg-white px-4 py-4 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-background text-foreground">
+      <header className="border-b bg-card px-4 py-4 sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
           <Link aria-label="YITA Iceberg home" href="/">
-            <YitaLogo compact showImage={false} />
+            <YitaLogo
+              className="[&_p]:!text-foreground"
+              compact
+              showImage={false}
+            />
           </Link>
-          <Link
-            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[#071426]/15 px-4 text-sm font-semibold hover:bg-[#eef4f9]"
-            href="/"
-          >
-            Back to home
-          </Link>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Link
+              className="inline-flex min-h-11 items-center justify-center rounded-lg border px-4 text-sm font-semibold hover:bg-secondary"
+              href="/"
+            >
+              Back to home
+            </Link>
+          </div>
         </div>
       </header>
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8f7437]">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
           Staff portal
         </p>
         <h1 className="mt-3 font-display text-4xl leading-tight sm:text-5xl">
           Privacy notice
         </h1>
-        <p className="mt-4 max-w-2xl text-base leading-7 text-[#1d2430]/70">
+        <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
           This notice explains how operational information is handled within
           the private YITA Iceberg system.
         </p>
-        <div className="mt-10 divide-y divide-[#071426]/10 border-y border-[#071426]/10">
+        <div className="mt-10 divide-y border-y">
           {sections.map((section) => (
             <section className="grid gap-3 py-6 md:grid-cols-[15rem_1fr]" key={section.title}>
               <h2 className="text-lg font-semibold">{section.title}</h2>
-              <p className="text-sm leading-7 text-[#1d2430]/72">{section.body}</p>
+              <p className="text-sm leading-7 text-muted-foreground">{section.body}</p>
             </section>
           ))}
         </div>

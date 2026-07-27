@@ -5,6 +5,8 @@ import { BranchProvider } from "@/components/branch/branch-context";
 import { BranchSelector } from "@/components/branch/branch-selector";
 import { CrystalMark } from "@/components/brand/crystal-mark";
 import { AppNavigation } from "@/components/navigation/app-navigation";
+import { PageBackButton } from "@/components/navigation/page-back-button";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import type { SessionUserForClient } from "@/lib/types/operational";
 
 export function AppShell({
@@ -68,11 +70,15 @@ export function AppShell({
               </div>
               <div className="flex min-w-0 flex-wrap items-center gap-3">
                 <BranchSelector />
+                <ThemeToggle />
                 <SignOutButton />
               </div>
             </header>
             <main className="flex-1 px-4 py-5 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-7 lg:pb-7 lg:pt-2">
-              <div className="mx-auto w-full max-w-[1500px]">{children}</div>
+              <div className="mx-auto w-full max-w-[1500px]">
+                <PageBackButton />
+                {children}
+              </div>
             </main>
           </div>
         </div>

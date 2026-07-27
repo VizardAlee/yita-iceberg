@@ -2,6 +2,23 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 import { ServiceWorkerRegistration } from "@/components/pwa/service-worker-registration";
+import { ThemeProvider } from "@/components/theme/theme-provider";
+
+const themeScript = `
+(() => {
+  try {
+    const stored = localStorage.getItem("yita-theme");
+    const dark = stored === "dark" ||
+      ((stored === null || stored === "system") &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches);
+    document.documentElement.classList.toggle("dark", dark);
+    document.documentElement.style.colorScheme = dark ? "dark" : "light";
+    document.querySelectorAll('meta[name="theme-color"]').forEach((element) => {
+      element.setAttribute("content", dark ? "#172033" : "#eef4f9");
+    });
+  } catch {}
+})();
+`;
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -49,10 +66,16 @@ export default function RootLayout({
       className="h-full antialiased"
       data-scroll-behavior="smooth"
       lang="en"
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className="min-h-full flex flex-col">
-        {children}
-        <ServiceWorkerRegistration />
+        <ThemeProvider>
+          {children}
+          <ServiceWorkerRegistration />
+        </ThemeProvider>
       </body>
     </html>
   );

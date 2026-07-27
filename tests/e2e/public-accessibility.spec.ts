@@ -87,6 +87,40 @@ test("staff can request password reset instructions", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("dark mode can be enabled and persists across navigation", async ({ page }) => {
+  await page.goto("/sign-in");
+
+  const darkModeButton = page.getByRole("button", {
+    name: "Switch to dark mode",
+  });
+  await expect(darkModeButton).toBeVisible();
+  await darkModeButton.click();
+
+  await expect(page.locator("html")).toHaveClass(/dark/);
+  await expect(
+    page.getByRole("button", { name: "Switch to light mode" }),
+  ).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("yita-theme"))).toBe(
+    "dark",
+  );
+
+  await gotoStable(page, "/forgot-password");
+  await expect(page.locator("html")).toHaveClass(/dark/);
+  expect(
+    await page.locator('meta[name="theme-color"]').evaluateAll((elements) =>
+      elements.every((element) => element.getAttribute("content") === "#172033"),
+    ),
+  ).toBe(
+    true,
+  );
+
+  const results = await new AxeBuilder({ page }).analyze();
+  const blocking = results.violations.filter((violation) =>
+    violation.impact === "critical" || violation.impact === "serious",
+  );
+  expect(blocking).toEqual([]);
+});
+
 test("web app manifest exposes installable PWA metadata", async ({ request }) => {
   const response = await request.get("/manifest.webmanifest");
   expect(response.ok()).toBe(true);

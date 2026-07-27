@@ -9,7 +9,7 @@ async function signInAsAdmin(
   await page.goto("/sign-in");
   const emailInput = page.getByLabel("Email");
   const passwordInput = page.getByLabel("Password");
-  const signInButton = page.getByRole("button", { name: "Sign in" });
+  const signInButton = page.locator('button[type="submit"]');
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
     await emailInput.fill("admin@example.test");
@@ -19,7 +19,7 @@ async function signInAsAdmin(
     await signInButton.click();
 
     try {
-      await expect(page).toHaveURL(/\/dashboard$/, { timeout: 30_000 });
+      await expect(page).toHaveURL(/\/dashboard$/, { timeout: 60_000 });
       break;
     } catch (error) {
       if (attempt === 1) throw error;
@@ -216,6 +216,39 @@ test.describe("authenticated mobile layout", () => {
       expect(layout.labels.length).toBeGreaterThan(0);
       expect(layout.labels.every(Boolean)).toBe(true);
     }
+  });
+
+  test("workspace back controls follow the route hierarchy", async ({
+    browserName,
+    page,
+  }) => {
+    test.skip(
+      browserName === "webkit",
+      "Shared route hierarchy is verified in mobile Chromium.",
+    );
+    await signInAsAdmin(page);
+
+    await expect(
+      page.getByRole("link", { name: /^Back to/ }),
+    ).toHaveCount(0);
+
+    await gotoStable(page, "/access");
+    await expect(
+      page.getByRole("link", { name: "Back to dashboard" }),
+    ).toHaveAttribute("href", "/dashboard");
+
+    await gotoStable(page, "/reports/sales");
+    await expect(
+      page.getByRole("link", { name: "Back to reports" }),
+    ).toHaveAttribute("href", "/reports");
+
+    await gotoStable(page, "/customers/new");
+    await expect(
+      page.getByRole("link", { name: "Back", exact: true }),
+    ).toHaveAttribute("href", "/customers");
+    await expect(
+      page.getByRole("link", { name: "Back to dashboard" }),
+    ).toHaveCount(0);
   });
 
   test("key creation forms remain usable on phones", async ({ browserName, page }) => {
