@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { getDownloadURL, ref } from "firebase/storage";
-import { IconDiamond } from "@tabler/icons-react";
+import { IconSnowflake } from "@tabler/icons-react";
 
 import { getFirebaseServices } from "@/lib/firebase/client";
 import { cn } from "@/lib/utils";
@@ -48,7 +48,7 @@ export function ProductImage({
       {url ? (
         <Image alt={alt} className="object-cover" fill sizes="96px" src={url} unoptimized />
       ) : (
-        <IconDiamond aria-hidden="true" className="size-7 opacity-55" />
+        <IconSnowflake aria-hidden="true" className="size-7 opacity-55" />
       )}
     </div>
   );

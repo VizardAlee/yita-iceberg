@@ -17,7 +17,7 @@ export function SecuritySection() {
               Governance
             </p>
             <h2 className="mt-4 font-display text-4xl leading-tight text-balance sm:text-5xl">
-              Luxury presentation, operational restraint.
+              Clear operations, controlled access.
             </h2>
             <p className="mt-5 text-base leading-7 text-[#1d2430]/72">
               The portal gives each team member the tools required for their

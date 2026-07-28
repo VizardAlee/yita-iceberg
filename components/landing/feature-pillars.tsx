@@ -9,8 +9,8 @@ import {
 
 const features = [
   {
-    title: "Jewelry inventory control",
-    body: "Branch stock, reservations, counts, and protected valuation fields stay separated.",
+    title: "Ice stock control",
+    body: "Central receipts, branch allocations, reservations, counts, and protected valuation fields stay separated.",
     icon: IconBuildingStore,
   },
   {
@@ -50,7 +50,7 @@ export function FeaturePillars() {
               Platform pillars
             </p>
             <h2 className="mt-4 font-display text-4xl leading-tight text-balance sm:text-5xl">
-              Built for teams that trade precious inventory under pressure.
+              Built for teams that produce, distribute, and sell ice across branches.
             </h2>
           </div>
           <p className="max-w-sm text-sm leading-6 text-[#dceaf7]/70">

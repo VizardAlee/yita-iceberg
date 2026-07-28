@@ -1,10 +1,10 @@
 # YITA Iceberg - Application Functionality Summary
 
-Last updated: 25 July 2026
+Last updated: 28 July 2026
 
 ## 1. Purpose
 
-YITA Iceberg is a secure, multi-branch jewelry inventory, sales-control, point-of-sale, and financial-oversight application. It tracks products from central stock allocation through branch inventory, customer ordering, payment, controlled release, completed sale, reporting, and any later correction or reversal.
+YITA Iceberg is a secure, multi-branch ice-block production, inventory, sales-control, point-of-sale, and financial-oversight application. It tracks ice blocks and related products from central stock receipt and branch allocation through customer ordering, payment, controlled dispatch, completed sale, reporting, and any later correction or reversal.
 
 The standard sale deliberately separates responsibilities:
 
@@ -34,6 +34,7 @@ Admin and super-admin permissions are inherited across the operational workflows
 - The inviter enters the staff member's name, email, optional phone number, role, and branch assignment.
 - The system creates or updates the Firebase Authentication account and the corresponding staff profile.
 - A secure password-setup link is generated for the inviter to copy and share manually with the invited user.
+- If a setup link expires, an authorized admin can generate a replacement link for the existing active user without changing the user's role or branch assignments.
 - Operational staff must be assigned to at least one branch.
 - Admins can update roles and branch assignments, deactivate users, and reactivate users.
 - The access screen shows active and inactive registered staff.
@@ -274,7 +275,7 @@ The reporting area includes:
 - When primary links fill the available width, remaining destinations move into a separate **More** sheet instead of causing horizontal scrolling.
 - The More sheet opens independently above the bottom navigation.
 - Role-based navigation hides workflows the user cannot perform.
-- The interface uses a restrained frosted-glass visual treatment suited to the jewelry brand while keeping forms and tables readable.
+- The interface uses a restrained frosted-ice visual treatment suited to the brand while keeping forms and tables readable.
 - Product, order, payment, inventory, and approval workflows are usable across desktop, tablet, and mobile layouts.
 
 ## 17. Security And Data Integrity
@@ -332,4 +333,4 @@ The reporting area includes:
 - Product creation does not invent stock. Quantity enters through central or branch stock receipts and is then allocated or managed explicitly.
 - Completed sales cannot be casually edited. Corrections must use the audited reversal workflow.
 - CSV is the implemented report export format.
-- The application is an internal operational system, not a public jewelry storefront or e-commerce checkout.
+- The application is an internal operational system, not a public storefront or e-commerce checkout.

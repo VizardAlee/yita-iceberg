@@ -64,9 +64,9 @@ async function seed() {
     }),
     db.doc(`products/${productId}`).set({
       sku: `YI-SMOKE-${stamp}`.toUpperCase(),
-      name: `[SMOKE] Verification Ring ${stamp}`,
-      category: "Ring",
-      unit: "piece",
+      name: `[SMOKE] Verification Ice Block ${stamp}`,
+      category: "Ice Block",
+      unit: "block",
       isActive: true,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
@@ -76,8 +76,8 @@ async function seed() {
     db.doc(`branches/${branchId}/products/${productId}`).set({
       productId,
       sku: `YI-SMOKE-${stamp}`.toUpperCase(),
-      name: `[SMOKE] Verification Ring ${stamp}`,
-      unit: "piece",
+      name: `[SMOKE] Verification Ice Block ${stamp}`,
+      unit: "block",
       sellingPriceKobo: 100_000,
       minimumPriceKobo: 80_000,
       isActive: true,
@@ -94,8 +94,8 @@ async function seed() {
     db.doc(`branches/${branchId}/inventory/${productId}`).set({
       productId,
       sku: `YI-SMOKE-${stamp}`.toUpperCase(),
-      productName: `[SMOKE] Verification Ring ${stamp}`,
-      unit: "piece",
+      productName: `[SMOKE] Verification Ice Block ${stamp}`,
+      unit: "block",
       onHandQty: 5,
       reservedQty: 0,
       soldQty: 0,
@@ -247,7 +247,7 @@ async function runWorkflow() {
   try {
     const registrar = await signIn(browser, 0);
     await registrar.page.goto(`${env.APP_BASE_URL}/orders/new`);
-    const productName = `[SMOKE] Verification Ring ${stamp}`;
+    const productName = `[SMOKE] Verification Ice Block ${stamp}`;
     const product = registrar.page.getByText(productName, { exact: true }).first();
     await expect(product).toBeVisible({ timeout: 60_000 });
     await product

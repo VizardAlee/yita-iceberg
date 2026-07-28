@@ -9,7 +9,7 @@ export function LandingFooter() {
         <div className="space-y-3">
           <YitaLogo compact showImage={false} />
           <p className="max-w-md text-sm leading-6 text-[#dceaf7]/65">
-            Private staff operations portal for YITA Iceberg Jewelry Trading.
+            Private staff operations portal for YITA Iceberg ice production and distribution.
             For account assistance, contact your company administrator.
           </p>
         </div>

@@ -30,20 +30,20 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_BASE_URL || "http://localhost:3000"),
   applicationName: "YITA Iceberg",
-  title: "YITA Iceberg — Jewelry Trading & Secure Inventory Control",
+  title: "YITA Iceberg — Ice Production, Sales & Inventory Control",
   description:
-    "Premium jewelry trading platform with controlled inventory, payment verification, release approval, branch oversight, and audit-ready reporting.",
+    "Multi-branch ice production and distribution operations with controlled inventory, payment verification, release approval, and audit-ready reporting.",
   openGraph: {
-    title: "YITA Iceberg — Jewelry Trading & Secure Inventory Control",
+    title: "YITA Iceberg — Ice Production, Sales & Inventory Control",
     description:
-      "Luxury jewelry trading with secure inventory, payment verification, release approval, and branch oversight.",
+      "Secure ice-block inventory, sales, payment verification, dispatch approval, and branch oversight.",
     images: ["/brand/yita-iceberg-logo.png"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "YITA Iceberg — Jewelry Trading & Secure Inventory Control",
+    title: "YITA Iceberg — Ice Production, Sales & Inventory Control",
     description:
-      "Premium jewelry trading platform with secure operational control.",
+      "Multi-branch ice production and distribution with secure operational control.",
     images: ["/brand/yita-iceberg-logo.png"],
   },
   appleWebApp: {

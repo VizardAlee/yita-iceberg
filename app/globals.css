@@ -208,13 +208,6 @@
     font-family: var(--font-display);
   }
 
-  .luxury-card-hover {
-    transition:
-      transform 180ms ease,
-      border-color 180ms ease,
-      box-shadow 180ms ease;
-  }
-
   .app-surface {
     position: relative;
     overflow: hidden;

@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { isAdminRole, platformRoles, type PlatformRole } from "@/lib/domain/roles";
 import { getCurrentUser } from "@/lib/server/auth/session";
+import { generatePasswordSetupLink } from "@/lib/server/auth/password-setup-link";
 import { adminAuth, adminDb } from "@/lib/server/firebase-admin";
 
 const inviteUserSchema = z.object({
@@ -157,7 +158,7 @@ export async function POST(request: Request) {
       createdAt: now,
     });
 
-    const inviteLink = await adminAuth().generatePasswordResetLink(data.email);
+    const inviteLink = await generatePasswordSetupLink(data.email);
 
     return NextResponse.json({
       ok: true,

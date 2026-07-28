@@ -2,7 +2,7 @@
 
 ## Landing Page Direction
 
-The public landing page uses the YITA Iceberg luxury jewelry direction: deep navy, ice blue, platinum, and champagne gold. Typography uses system fonts only, with a serif display utility for premium headings and sans-serif UI text for readability.
+The public landing page uses the YITA Iceberg ice-production direction: deep navy, ice blue, clean white, and a restrained gold brand accent. Typography uses system fonts only, with a serif display utility for branded headings and sans-serif UI text for readability.
 
 ## Brand Assets
 
@@ -12,7 +12,7 @@ The public landing page uses the YITA Iceberg luxury jewelry direction: deep nav
 
 ## Responsive Intent
 
-- Desktop: wide luxury platform layout with immersive hero and polished card grids.
+- Desktop: wide operational layout with an immersive hero and polished card grids.
 - Tablet: app-like card density, larger touch targets, and prominent tablet preview.
 - Mobile: stacked sections, horizontal feature panels, compact top bar, and sticky bottom portal CTA.
 

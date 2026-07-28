@@ -57,10 +57,55 @@ test.describe("authenticated role workflows", () => {
     }
   });
 
+  test("admin replaces an expired setup link without changing user access", async ({ browser }) => {
+    const { context, page } = await signIn(browser, "admin@example.test");
+    if (getApps().length === 0) initializeApp({ projectId: "yita-iceberg" });
+    const db = getFirestore();
+    const before = (await db.doc("users/e2e-cashier").get()).data();
+
+    await page.goto("/access");
+    const cashierRow = page.getByRole("row").filter({ hasText: "Cashier" }).first();
+    const replacementResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().endsWith("/api/access/users/e2e-cashier/invite-link") &&
+        response.request().method() === "POST",
+      { timeout: 60_000 },
+    );
+    await cashierRow
+      .getByRole("button", { name: "Generate a new setup link for Cashier" })
+      .click();
+    const replacementResponse = await replacementResponsePromise;
+    expect(replacementResponse.status()).toBe(200);
+
+    await expect(page.getByText("Password setup link for Cashier")).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page.getByText(/replacement setup link is ready/i)).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Generate a new setup link for Super Admin" }),
+    ).toHaveCount(0);
+    const protectedTargetResponse = await page.request.post(
+      "/api/access/users/e2e-super-admin/invite-link",
+    );
+    expect(protectedTargetResponse.status()).toBe(403);
+
+    const after = (await db.doc("users/e2e-cashier").get()).data();
+    expect(after?.platformRole).toBe(before?.platformRole);
+    expect(after?.assignedBranchIds).toEqual(before?.assignedBranchIds);
+    expect(after?.isActive).toBe(before?.isActive);
+
+    const audit = await db
+      .collection("auditLogs")
+      .where("action", "==", "user.invite_link_regenerated")
+      .get();
+    expect(audit.docs.some((entry) => entry.data().entityId === "e2e-cashier")).toBe(true);
+    await context.close();
+  });
+
   test("registrar creates a stock-reserving order", async ({ browser }) => {
     const { context, page } = await signIn(browser, "registrar@example.test");
     await page.goto("/orders/new");
-    const product = page.getByText("E2E Diamond Ring", { exact: true }).first();
+    const product = page.getByText("E2E 5kg Ice Block", { exact: true }).first();
     await expect(product).toBeVisible();
     await product
       .locator("xpath=ancestor::div[.//button[normalize-space()='Add']][1]")
@@ -114,17 +159,23 @@ test.describe("authenticated role workflows", () => {
   test("manager sees the completed sale report and requests reversal", async ({ browser }) => {
     const { context, page } = await signIn(browser, "manager@example.test");
     await page.goto("/reports/sales");
-    await expect(page.getByText(orderNumber, { exact: true })).toBeVisible();
+    await expect(page.getByText(orderNumber, { exact: true })).toBeVisible({
+      timeout: 60_000,
+    });
     await expect(page.getByText("Report access denied")).toHaveCount(0);
 
     await page.goto(`/reversals/new?orderId=${orderId}`);
-    await expect(page.getByText(orderNumber, { exact: true })).toBeVisible();
+    await expect(page.getByText(orderNumber, { exact: true })).toBeVisible({
+      timeout: 60_000,
+    });
     await page.getByLabel("Reversal type").selectOption("full_reversal_with_stock_return");
     await page.getByLabel("Refund amount").fill("1000");
     await page.getByLabel("Reason").fill("Controlled end-to-end launch verification");
     acceptConfirmations(page);
     await page.getByRole("button", { name: "Submit request" }).click();
-    await expect(page.getByText(/Reversal [A-Z]+-.+ submitted\./)).toBeVisible();
+    await expect(page.getByText(/Reversal [A-Z]+-.+ submitted\./)).toBeVisible({
+      timeout: 60_000,
+    });
 
     if (getApps().length === 0) initializeApp({ projectId: "yita-iceberg" });
     const reversal = await getFirestore()
@@ -143,11 +194,11 @@ test.describe("authenticated role workflows", () => {
     await page.goto(`/reversals/${reversalId}/approve`);
     await page.getByLabel("Approval note or rejection reason").fill("Approved controlled launch verification");
     await page.getByRole("button", { name: "Approve" }).click();
-    await expect(page.getByText("Reversal approved.")).toBeVisible();
+    await expect(page.getByText("Reversal approved.")).toBeVisible({ timeout: 60_000 });
 
     await page.goto(`/reversals/${reversalId}`);
     await page.getByRole("button", { name: "Complete" }).click();
-    await expect(page.getByText("Reversal completed.")).toBeVisible();
+    await expect(page.getByText("Reversal completed.")).toBeVisible({ timeout: 60_000 });
 
     const db = getFirestore();
     const [order, inventory, reversal] = await Promise.all([

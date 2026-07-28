@@ -11,12 +11,12 @@ import {
   IconChartBar,
   IconAlertTriangle,
   IconBuildingStore,
-  IconDiamond,
   IconLockAccess,
   IconPackage,
   IconReceiptRefund,
   IconReportAnalytics,
   IconShieldCheck,
+  IconSnowflake,
   IconUsers,
 } from "@tabler/icons-react";
 
@@ -341,7 +341,7 @@ const workflowCards: WorkflowCard[] = [
     title: "Product catalog",
     description: "Manage master products and branch product pricing controls.",
     roles: ["admin", "super_admin"],
-    icon: IconDiamond,
+    icon: IconSnowflake,
   },
   {
     href: "/access",
@@ -355,7 +355,13 @@ const workflowCards: WorkflowCard[] = [
 function moneyOrValue(value: unknown, money?: boolean) {
   if (money) return formatNairaFromKobo(typeof value === "number" ? value : 0);
   if (typeof value === "boolean") return value ? "Yes" : "No";
-  if (typeof value === "string" && value.includes("T")) return new Date(value).toLocaleString();
+  if (
+    typeof value === "string" &&
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value) &&
+    !Number.isNaN(Date.parse(value))
+  ) {
+    return new Date(value).toLocaleString();
+  }
   return value === undefined || value === null || value === "" ? "—" : String(value).replaceAll("_", " ");
 }
 

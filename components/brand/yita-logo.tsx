@@ -40,7 +40,7 @@ export function YitaLogo({
         </p>
         {!compact ? (
           <p className="mt-1 text-[0.62rem] uppercase tracking-[0.36em] text-white/55">
-            Jewelry Trading
+            Ice Production
           </p>
         ) : null}
       </div>

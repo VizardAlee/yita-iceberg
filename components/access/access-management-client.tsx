@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { IconEdit, IconRefresh, IconUserPlus, IconX } from "@tabler/icons-react";
+import { IconEdit, IconLink, IconRefresh, IconUserPlus, IconX } from "@tabler/icons-react";
 
 import { useBranchContext } from "@/components/branch/branch-context";
 import { Field } from "@/components/shared/field";
@@ -41,7 +41,9 @@ export function AccessManagementClient() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [inviteLinkRecipient, setInviteLinkRecipient] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [regeneratingUid, setRegeneratingUid] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -117,6 +119,7 @@ export function AccessManagementClient() {
     setMessage(null);
     setError(null);
     setInviteLink(null);
+    setInviteLinkRecipient(null);
     setCopied(false);
 
     try {
@@ -143,6 +146,7 @@ export function AccessManagementClient() {
       }
 
       setInviteLink(result.inviteLink);
+      setInviteLinkRecipient(displayName.trim());
       setMessage("User invited. Copy the setup link and share it with them.");
       setDisplayName("");
       setEmail("");
@@ -162,6 +166,48 @@ export function AccessManagementClient() {
 
     await navigator.clipboard.writeText(inviteLink);
     setCopied(true);
+  }
+
+  async function regenerateInviteLink(profile: AccessUser) {
+    setRegeneratingUid(profile.uid);
+    setMessage(null);
+    setError(null);
+    setInviteLink(null);
+    setInviteLinkRecipient(null);
+    setCopied(false);
+
+    try {
+      const response = await fetch(
+        `/api/access/users/${encodeURIComponent(profile.uid)}/invite-link`,
+        {
+          method: "POST",
+          credentials: "same-origin",
+        },
+      );
+      const result = (await response.json()) as {
+        ok?: boolean;
+        inviteLink?: string;
+        message?: string;
+      };
+
+      if (!response.ok || !result.ok || !result.inviteLink) {
+        throw new Error(result.message || "Unable to generate a replacement setup link.");
+      }
+
+      setInviteLink(result.inviteLink);
+      setInviteLinkRecipient(profile.displayName);
+      setMessage(
+        `${profile.displayName}'s replacement setup link is ready. Copy it and share it with them.`,
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to generate a replacement setup link.",
+      );
+    } finally {
+      setRegeneratingUid(null);
+    }
   }
 
   function beginEdit(profile: AccessUser) {
@@ -244,12 +290,15 @@ export function AccessManagementClient() {
             </p>
           </div>
 
-          {message ? <OperationState detail={message} title="Invite ready" /> : null}
+          {message ? <OperationState detail={message} title="Setup link ready" /> : null}
           {error ? <OperationState detail={error} title="Access management error" /> : null}
           {inviteLink ? (
             <div className="space-y-3 rounded-lg border bg-background p-4">
               <div>
-                <p className="font-medium">Invite link</p>
+                <p className="font-medium">
+                  Password setup link
+                  {inviteLinkRecipient ? ` for ${inviteLinkRecipient}` : ""}
+                </p>
                 <p className="text-sm text-muted-foreground">
                   Share this link with the invited user so they can set their password.
                 </p>
@@ -352,6 +401,7 @@ export function AccessManagementClient() {
             <p>Admin users can manage company workflows and invite staff.</p>
             <p>Only super-admin users can create or assign super-admin access.</p>
             <p>Invite links are copied here and shared manually by the inviter.</p>
+            <p>Expired links can be replaced from the user list without recreating the account.</p>
           </div>
         </div>
       </section>
@@ -469,17 +519,35 @@ export function AccessManagementClient() {
                     </td>
                     {profile.uid !== user.uid &&
                     (user.platformRole === "super_admin" || profile.platformRole !== "super_admin") ? (
-                      <td className="px-3 py-2 text-right" data-deck-actions data-label="Actions">
-                        <Button
-                          aria-label={`Edit access for ${profile.displayName}`}
-                          onClick={() => beginEdit(profile)}
-                          size="sm"
-                          type="button"
-                          variant="ghost"
-                        >
-                          <IconEdit />
-                          Edit
-                        </Button>
+                      <td className="px-3 py-2" data-deck-actions data-label="Actions">
+                        <div className="flex flex-wrap justify-end gap-1">
+                          <Button
+                            aria-label={`Generate a new setup link for ${profile.displayName}`}
+                            disabled={!profile.isActive || regeneratingUid === profile.uid}
+                            onClick={() => void regenerateInviteLink(profile)}
+                            size="sm"
+                            title={
+                              profile.isActive
+                                ? "Generate a replacement password setup link"
+                                : "Reactivate this user before generating a setup link"
+                            }
+                            type="button"
+                            variant="ghost"
+                          >
+                            <IconLink />
+                            {regeneratingUid === profile.uid ? "Generating" : "New setup link"}
+                          </Button>
+                          <Button
+                            aria-label={`Edit access for ${profile.displayName}`}
+                            onClick={() => beginEdit(profile)}
+                            size="sm"
+                            type="button"
+                            variant="ghost"
+                          >
+                            <IconEdit />
+                            Edit
+                          </Button>
+                        </div>
                       </td>
                     ) : null}
                   </tr>
