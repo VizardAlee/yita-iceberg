@@ -95,6 +95,58 @@ export async function PATCH(
   }
 }
 
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ productId: string }> },
+) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ ok: false, message: "Authentication required." }, { status: 401 });
+  }
+  if (!isAdminRole(user.platformRole)) {
+    return NextResponse.json({ ok: false, message: "Product catalog requires admin access." }, { status: 403 });
+  }
+
+  try {
+    const { productId } = await params;
+    const productRef = adminDb().doc(`products/${productId}`);
+    const snapshot = await productRef.get();
+    if (!snapshot.exists) {
+      return NextResponse.json({ ok: false, message: "Product not found." }, { status: 404 });
+    }
+
+    const previousPath = snapshot.data()?.imageStoragePath ?? null;
+    const now = FieldValue.serverTimestamp();
+    const batch = adminDb().batch();
+    batch.update(productRef, {
+      imageStoragePath: null,
+      imageContentType: null,
+      imageUpdatedAt: now,
+      updatedAt: now,
+      updatedBy: user.uid,
+    });
+    batch.set(adminDb().collection("auditLogs").doc(), {
+      actorId: user.uid,
+      actorRole: user.platformRole,
+      action: "product.image_removed",
+      entityType: "product",
+      entityId: productId,
+      branchId: null,
+      before: { imageStoragePath: previousPath },
+      after: { imageStoragePath: null },
+      metadata: {},
+      createdAt: now,
+    });
+    await batch.commit();
+
+    const updated = await productRef.get();
+    return NextResponse.json({ ok: true, product: toProduct(updated.id, updated.data() ?? {}) });
+  } catch (error) {
+    console.error("Product image removal failed", error);
+    return NextResponse.json({ ok: false, message: "Unable to remove product image." }, { status: 500 });
+  }
+}
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ productId: string }> },

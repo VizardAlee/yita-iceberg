@@ -18,7 +18,7 @@ import {
   setDoc,
   where,
 } from "firebase/firestore";
-import { getBytes, ref, uploadString } from "firebase/storage";
+import { deleteObject, getBytes, ref, uploadString } from "firebase/storage";
 
 const projectId = "yita-iceberg";
 
@@ -681,6 +681,8 @@ describe("Storage product image rules", () => {
 
     const registrarStorage = testEnv.authenticatedContext("registrar-a").storage();
     await assertSucceeds(getBytes(ref(registrarStorage, "product-images/product-1/primary")));
+    await assertFails(deleteObject(ref(registrarStorage, "product-images/product-1/primary")));
+    await assertSucceeds(deleteObject(productRef));
   });
 
   it("rejects non-admin, invalid, and mismatched product image uploads", async () => {

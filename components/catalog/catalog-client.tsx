@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
-import { ref, uploadBytes } from "firebase/storage";
+import { deleteObject, ref, uploadBytes } from "firebase/storage";
 import { IconPhotoPlus, IconTrash } from "@tabler/icons-react";
 
 import { BranchRequired } from "@/components/branch/branch-required";
@@ -121,6 +121,26 @@ async function uploadProductImage(productId: string, file: File, uploadedBy: str
   const result = (await response.json()) as ProductDetailResponse;
   if (!response.ok || !result.ok || !result.product) {
     throw new Error(result.message || "Unable to attach the product image.");
+  }
+  return result.product;
+}
+
+async function removeProductImage(productId: string) {
+  const imageStoragePath = `product-images/${productId}/primary`;
+
+  try {
+    await deleteObject(ref(getFirebaseServices().storage, imageStoragePath));
+  } catch (error) {
+    if ((error as { code?: string }).code !== "storage/object-not-found") throw error;
+  }
+
+  const response = await fetch(`/api/catalog/products/${productId}`, {
+    method: "DELETE",
+    credentials: "same-origin",
+  });
+  const result = (await response.json()) as ProductDetailResponse;
+  if (!response.ok || !result.ok || !result.product) {
+    throw new Error(result.message || "Unable to remove the product image.");
   }
   return result.product;
 }
@@ -265,10 +285,15 @@ function ProductCatalog() {
             </div>
             <div className="flex items-center gap-2">
               <span className="rounded-md bg-secondary px-2 py-1 text-xs">
+                {product.imageStoragePath ? "Image added" : "Image needed"}
+              </span>
+              <span className="rounded-md bg-secondary px-2 py-1 text-xs">
                 {product.isActive === false ? "archived" : "active"}
               </span>
               <Button asChild variant="outline">
-                <Link href={`/catalog/products/${product.id}`}>Open</Link>
+                <Link href={`/catalog/products/${product.id}`}>
+                  {product.imageStoragePath ? "Manage product" : "Add image"}
+                </Link>
               </Button>
             </div>
           </div>
@@ -440,7 +465,7 @@ function ProductImagePicker({
   return (
     <div className="grid content-start gap-3">
       <span className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-        Product image
+        Primary product image (optional)
       </span>
       <div className="relative grid aspect-square w-full place-items-center overflow-hidden rounded-lg border bg-muted text-muted-foreground">
         {previewUrl ? (
@@ -463,7 +488,11 @@ function ProductImagePicker({
       />
       <div className="flex items-center gap-2">
         <Button asChild className="min-w-0 flex-1" variant="outline">
-          <label htmlFor={inputId}>
+          <label
+            aria-disabled={disabled}
+            className={disabled ? "pointer-events-none opacity-50" : undefined}
+            htmlFor={inputId}
+          >
             <IconPhotoPlus aria-hidden="true" />
             {file ? "Change image" : "Choose image"}
           </label>
@@ -509,6 +538,24 @@ function ProductDetail({ productId }: { productId: string }) {
   const [message, setMessage] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  function selectImage(file: File | null) {
+    if (!file) {
+      setImageFile(null);
+      return true;
+    }
+
+    try {
+      validateProductImage(file);
+      setImageFile(file);
+      setMessage(null);
+      return true;
+    } catch (error) {
+      setImageFile(null);
+      setMessage(error instanceof Error ? error.message : "Invalid product image.");
+      return false;
+    }
+  }
 
   function populateFields(next: ProductDocument) {
     setProduct(next);
@@ -573,6 +620,19 @@ function ProductDetail({ productId }: { productId: string }) {
     }
   }
 
+  async function removeImage() {
+    if (!product?.imageStoragePath || !window.confirm("Remove this product image?")) return;
+    setUploadingImage(true);
+    setMessage(null);
+    try {
+      populateFields(await removeProductImage(productId));
+      setImageFile(null);
+      setMessage("Product image removed. A new image can be added at any time.");
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
   if (!product && message) {
     return <OperationState detail={message} title="Product unavailable" />;
   }
@@ -600,8 +660,14 @@ function ProductDetail({ productId }: { productId: string }) {
         <div className="space-y-4">
           <div className="app-surface space-y-3 rounded-lg border p-4">
             <ProductImage alt={product.name} className="w-full max-w-64" path={product.imageStoragePath} version={product.imageUpdatedAt} />
-            <Field label={product.imageStoragePath ? "Replace product image" : "Add product image"}><input accept="image/jpeg,image/png,image/webp" className="block w-full rounded-md border bg-background p-2 text-sm" disabled={product.isActive === false} onChange={(event) => setImageFile(event.target.files?.[0] ?? null)} type="file" /></Field>
+            <ProductImagePicker disabled={uploadingImage || product.isActive === false} file={imageFile} onChange={selectImage} />
             <Button disabled={!imageFile || uploadingImage || product.isActive === false} onClick={() => void replaceImage().catch((error) => setMessage(error instanceof Error ? error.message : "Image upload failed"))} type="button" variant="outline">{uploadingImage ? "Uploading..." : "Save image"}</Button>
+            {product.imageStoragePath ? (
+              <Button disabled={uploadingImage || product.isActive === false} onClick={() => void removeImage().catch((error) => setMessage(error instanceof Error ? error.message : "Image removal failed"))} type="button" variant="ghost">
+                <IconTrash aria-hidden="true" />Remove image
+              </Button>
+            ) : null}
+            <p className="text-xs leading-5 text-muted-foreground">Use a clear image of the actual product so registration, payment, release, and stock teams can identify it.</p>
           </div>
           {product.qrCodePayload ? (
             <div className="print-surface app-surface h-fit rounded-xl border p-4">
@@ -640,6 +706,7 @@ function BranchProducts() {
   const [stockPool, setStockPool] = useState<StockPool | null>(null);
   const [loadingPool, setLoadingPool] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const selectedProduct = catalog.find((product) => product.id === productId) ?? null;
 
   useEffect(() => {
     async function load() {
@@ -691,6 +758,16 @@ function BranchProducts() {
       <p className="text-sm text-muted-foreground">{selectedBranch?.name ?? "Select a branch from the navigation first."}</p>
     </div>
     <Field label="Product"><select className="h-9 rounded-md border bg-background px-3" onChange={(e) => setProductId(e.target.value)} value={productId}><option value="">Select product</option>{catalog.map((p) => <option key={p.id} value={p.id}>{p.name} · {p.sku}</option>)}</select></Field>
+    {selectedProduct ? (
+      <div className="app-surface flex items-center gap-3 rounded-lg border p-3">
+        <ProductImage alt={selectedProduct.name} className="size-20" path={selectedProduct.imageStoragePath} version={selectedProduct.imageUpdatedAt} />
+        <div className="min-w-0">
+          <p className="font-medium">{selectedProduct.name}</p>
+          <p className="text-sm text-muted-foreground">{selectedProduct.sku} · {selectedProduct.unit}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{selectedProduct.imageStoragePath ? "Primary image available" : "No image yet. Add one from the product catalog."}</p>
+        </div>
+      </div>
+    ) : null}
     {loadingPool ? <OperationState title="Loading allocation stock" /> : null}
     {stockPool ? <>
       <div className="grid grid-cols-3 gap-2">

@@ -32,7 +32,7 @@ function acceptConfirmations(page: Page, promptValue = "E2E launch verification"
 test.describe("authenticated role workflows", () => {
   test.skip(({ isMobile }) => isMobile, "The transactional suite runs once on desktop; mobile access is covered separately.");
   test.describe.configure({ mode: "serial" });
-  test.setTimeout(180_000);
+  test.setTimeout(360_000);
 
   let orderId = "";
   let orderNumber = "";
@@ -50,11 +50,37 @@ test.describe("authenticated role workflows", () => {
 
     for (const [email, path, heading, branch] of cases) {
       const session = await signIn(browser, email, { branch });
+      await expect(session.page.getByRole("heading", { name: "What this role can do" })).toBeVisible();
+      await expect(session.page.getByRole("heading", { name: "Step-by-step workflow" })).toBeVisible();
+      await expect(session.page.getByText(/^STEP 5 OF 5$/).first()).toBeVisible();
       await session.page.goto(path);
       await expect(session.page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
       await expect(session.page.getByText(/permission|access denied|internal/i)).toHaveCount(0);
       await session.context.close();
     }
+  });
+
+  test("admin can add, replace, and remove a product image", async ({ browser }) => {
+    const { context, page } = await signIn(browser, "admin@example.test");
+    await page.goto("/catalog/products/e2e-product");
+    await expect(page.getByRole("heading", { name: "E2E 5kg Ice Block" })).toBeVisible();
+
+    const onePixelPng = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "base64",
+    );
+    await page.locator('input[type="file"]').setInputFiles({
+      name: "ice-block.png",
+      mimeType: "image/png",
+      buffer: onePixelPng,
+    });
+    await page.getByRole("button", { name: "Save image" }).click();
+    await expect(page.getByText("Product image updated.")).toBeVisible({ timeout: 30_000 });
+
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.getByRole("button", { name: "Remove image" }).click();
+    await expect(page.getByText("Product image removed. A new image can be added at any time.")).toBeVisible({ timeout: 30_000 });
+    await context.close();
   });
 
   test("admin replaces an expired setup link without changing user access", async ({ browser }) => {
