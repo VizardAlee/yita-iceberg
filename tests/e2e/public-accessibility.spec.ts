@@ -29,12 +29,18 @@ test("sign-in is keyboard accessible and has no serious accessibility violations
   await expect(page.getByLabel("Email")).toBeVisible();
   await expect(page.getByLabel("Password")).toBeVisible();
 
-  await page.keyboard.press("Tab");
-  await expect(page.getByLabel("Email")).toBeFocused();
-  await page.keyboard.press("Tab");
-  await expect(page.getByLabel("Password")).toBeFocused();
-  await page.keyboard.press("Tab");
-  await expect(page.getByRole("button", { name: "Sign in" })).toBeFocused();
+  const keyboardOrder = [
+    page.getByRole("button", { name: /Switch to (dark|light) mode/ }),
+    page.getByLabel("Email"),
+    page.getByRole("link", { name: "Forgot password?" }),
+    page.getByLabel("Password"),
+    page.getByRole("button", { name: "Sign in" }),
+  ];
+
+  for (const control of keyboardOrder) {
+    await page.keyboard.press("Tab");
+    await expect(control).toBeFocused();
+  }
 
   const results = await new AxeBuilder({ page }).analyze();
   const blocking = results.violations.filter((violation) =>

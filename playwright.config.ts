@@ -3,7 +3,12 @@ import { defineConfig, devices } from "@playwright/test";
 const emulatorEnv = {
   APP_ENV: "local",
   FIREBASE_PROJECT_ID: "yita-iceberg",
+  NEXT_PUBLIC_FIREBASE_API_KEY: "yita-e2e-api-key",
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: "localhost",
   NEXT_PUBLIC_FIREBASE_PROJECT_ID: "yita-iceberg",
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: "yita-iceberg.appspot.com",
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "123456789012",
+  NEXT_PUBLIC_FIREBASE_APP_ID: "1:123456789012:web:yitae2e",
   NEXT_PUBLIC_USE_FIREBASE_EMULATORS: "true",
   NEXT_PUBLIC_ENABLE_APP_CHECK: "false",
   FIREBASE_AUTH_EMULATOR_HOST: "127.0.0.1:9099",
