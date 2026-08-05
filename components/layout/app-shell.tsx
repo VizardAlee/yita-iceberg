@@ -34,11 +34,11 @@ export function AppShell({
               <div className="glass-edge mb-7 rounded-xl border border-sidebar-border bg-white/[0.14] p-4 shadow-2xl shadow-black/10 backdrop-blur-xl">
                 <Image
                   alt="YITA Iceberg"
-                  className="h-auto w-32 brightness-110"
-                  height={1254}
+                  className="h-auto w-32"
+                  height={900}
                   priority
                   src="/brand/yita-iceberg-logo.webp"
-                  width={1254}
+                  width={900}
                 />
                 <div className="mt-4 space-y-1">
                   <p className="text-sm font-semibold tracking-normal">YITA Iceberg</p>
@@ -53,7 +53,7 @@ export function AppShell({
             <header className="liquid-glass sticky top-0 z-40 flex flex-col gap-3 border-b px-4 py-3 lg:static lg:flex-row lg:items-center lg:justify-between lg:border-b-0 lg:bg-transparent lg:px-7 lg:py-5 lg:shadow-none lg:backdrop-blur-none">
               <div className="flex min-w-0 items-center gap-3">
                 <span className="app-surface grid size-10 shrink-0 place-items-center rounded-xl border shadow-sm lg:hidden">
-                  <CrystalMark className="size-6 rotate-45" />
+                  <CrystalMark className="size-7" />
                 </span>
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold tracking-normal">

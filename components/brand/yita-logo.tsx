@@ -23,17 +23,17 @@ export function YitaLogo({
       <Image
         alt="YITA Iceberg"
         className={cn("h-auto w-44", imageClassName, className)}
-        height={1254}
+        height={900}
         priority={compact}
         src="/brand/yita-iceberg-logo.webp"
-        width={1254}
+        width={900}
       />
     );
   }
 
   return (
     <div className={cn("flex items-center gap-3", className)}>
-      <CrystalMark className={cn("size-10 rotate-45", markClassName)} />
+      <CrystalMark className={cn("size-10", markClassName)} />
       <div className="leading-none">
         <p className="font-display text-lg tracking-[0.22em] text-white">
           YITA <span className="text-[#c8a45d]">ICEBERG</span>

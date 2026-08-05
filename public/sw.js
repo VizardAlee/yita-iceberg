@@ -1,4 +1,4 @@
-const CACHE_NAME = "yita-iceberg-pwa-v1";
+const CACHE_NAME = "yita-iceberg-pwa-v2";
 const OFFLINE_URL = "/offline.html";
 const PRECACHE_PATHS = [
   OFFLINE_URL,

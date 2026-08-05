@@ -19,10 +19,10 @@ export default async function SignInPage() {
           <Image
             alt="YITA Iceberg"
             className="mx-auto h-auto w-56 rounded-xl bg-white p-2 shadow-sm"
-            height={1254}
+            height={900}
             priority
             src="/brand/yita-iceberg-logo.webp"
-            width={1254}
+            width={900}
           />
           <h1 className="text-3xl font-semibold tracking-normal">Sign in</h1>
           <p className="text-sm leading-6 text-muted-foreground">

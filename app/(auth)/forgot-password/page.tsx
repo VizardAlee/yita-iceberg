@@ -25,10 +25,10 @@ export default async function ForgotPasswordPage({
           <Image
             alt="YITA Iceberg"
             className="mx-auto h-auto w-48 rounded-xl bg-white p-2 shadow-sm"
-            height={1254}
+            height={900}
             priority
             src="/brand/yita-iceberg-logo.webp"
-            width={1254}
+            width={900}
           />
           <h1 className="text-3xl font-semibold tracking-normal">
             Reset your password

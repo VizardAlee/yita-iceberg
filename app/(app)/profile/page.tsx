@@ -149,7 +149,7 @@ export default async function ProfilePage() {
           </div>
           <div className="flex items-center justify-center md:justify-end">
             <div className="relative grid size-44 place-items-center rounded-[2rem] border border-white/10 bg-white/[0.16]">
-              <CrystalMark className="absolute -right-3 -top-3 size-12 rotate-45" />
+              <CrystalMark className="absolute -right-3 -top-3 size-12" />
               <div className="grid size-28 place-items-center rounded-full border border-accent/40 bg-primary-foreground font-display text-4xl text-primary shadow-[0_20px_55px_rgba(0,0,0,0.2)]">
                 {initials(user.displayName) || "YI"}
               </div>
