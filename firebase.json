@@ -24,6 +24,20 @@
       ]
     }
   ],
+  "apphosting": [
+    {
+      "backendId": "yita-iceberg",
+      "rootDir": ".",
+      "alwaysDeployFromSource": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "functions"
+      ]
+    }
+  ],
   "emulators": {
     "auth": {
       "port": 9099
