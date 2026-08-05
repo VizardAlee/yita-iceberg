@@ -37,7 +37,7 @@ export function AppShell({
                   className="h-auto w-32"
                   height={900}
                   priority
-                  src="/brand/yita-iceberg-logo.webp"
+                  src="/brand/yita-iceberg-logo-official.webp"
                   width={900}
                 />
                 <div className="mt-4 space-y-1">

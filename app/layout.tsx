@@ -37,14 +37,14 @@ export const metadata: Metadata = {
     title: "YITA Iceberg — Ice Production, Sales & Inventory Control",
     description:
       "Secure ice-block inventory, sales, payment verification, dispatch approval, and branch oversight.",
-    images: ["/brand/yita-iceberg-logo.png"],
+    images: ["/brand/yita-iceberg-logo-official.png"],
   },
   twitter: {
     card: "summary_large_image",
     title: "YITA Iceberg — Ice Production, Sales & Inventory Control",
     description:
       "Multi-branch ice production and distribution with secure operational control.",
-    images: ["/brand/yita-iceberg-logo.png"],
+    images: ["/brand/yita-iceberg-logo-official.png"],
   },
   appleWebApp: {
     capable: true,

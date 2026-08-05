@@ -25,7 +25,7 @@ export function YitaLogo({
         className={cn("h-auto w-44", imageClassName, className)}
         height={900}
         priority={compact}
-        src="/brand/yita-iceberg-logo.webp"
+        src="/brand/yita-iceberg-logo-official.webp"
         width={900}
       />
     );

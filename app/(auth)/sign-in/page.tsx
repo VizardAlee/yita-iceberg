@@ -21,7 +21,7 @@ export default async function SignInPage() {
             className="mx-auto h-auto w-56 rounded-xl bg-white p-2 shadow-sm"
             height={900}
             priority
-            src="/brand/yita-iceberg-logo.webp"
+            src="/brand/yita-iceberg-logo-official.webp"
             width={900}
           />
           <h1 className="text-3xl font-semibold tracking-normal">Sign in</h1>

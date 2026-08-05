@@ -6,8 +6,8 @@ The public landing page uses the YITA Iceberg ice-production direction: deep nav
 
 ## Brand Assets
 
-- Primary logo asset: `public/brand/yita-iceberg-logo.png`
-- Optimized UI logo asset: `public/brand/yita-iceberg-logo.webp`
+- Primary logo asset: `public/brand/yita-iceberg-logo-official.png`
+- Optimized UI logo asset: `public/brand/yita-iceberg-logo-official.webp`
 - Brand mark/text components: `components/brand/crystal-mark.tsx` and `components/brand/yita-logo.tsx`
 - Application, favicon, Apple touch, and PWA icons are derived from the approved transparent logo master.
 

@@ -16,7 +16,7 @@ export function CrystalMark({ className }: { className?: string }) {
         className="object-contain"
         fill
         sizes="48px"
-        src="/brand/yita-iceberg-logo.webp"
+        src="/brand/yita-iceberg-logo-official.webp"
       />
     </span>
   );

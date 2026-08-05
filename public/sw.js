@@ -1,11 +1,11 @@
-const CACHE_NAME = "yita-iceberg-pwa-v2";
+const CACHE_NAME = "yita-iceberg-pwa-v3";
 const OFFLINE_URL = "/offline.html";
 const PRECACHE_PATHS = [
   OFFLINE_URL,
-  "/icons/pwa-192x192.png",
-  "/icons/pwa-512x512.png",
-  "/icons/pwa-maskable-512x512.png",
-  "/brand/yita-iceberg-logo.webp",
+  "/icons/yita-iceberg-192x192.png",
+  "/icons/yita-iceberg-512x512.png",
+  "/icons/yita-iceberg-maskable-512x512.png",
+  "/brand/yita-iceberg-logo-official.webp",
 ];
 
 self.addEventListener("install", (event) => {
