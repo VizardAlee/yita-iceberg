@@ -113,6 +113,7 @@ test.describe("authenticated mobile layout", () => {
 
     for (const destination of [
       "Order registration",
+      "User guide",
       "Customers",
       "Payments",
       "Release verification",
@@ -160,6 +161,7 @@ test.describe("authenticated mobile layout", () => {
       "/dashboard",
       "/reports",
       "/profile",
+      "/user-guide",
       "/orders",
       "/customers",
       "/cashier",

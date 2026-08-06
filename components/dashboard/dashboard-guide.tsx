@@ -325,6 +325,15 @@ export function DashboardGuide({ role, uid }: { role: PlatformRole; uid: string 
                 </Button>
               )}
             </div>
+            <div className="mt-3 text-center">
+              <Link
+                className="text-sm font-semibold text-primary hover:underline"
+                href="/user-guide"
+                onClick={finish}
+              >
+                Open the full user guide
+              </Link>
+            </div>
           </section>
         </div>
       ) : null}
@@ -343,9 +352,14 @@ export function RoleWorkflowOverview({ role }: { role: PlatformRole }) {
           <h2 className="mt-1 text-lg font-semibold">{guide.headline}</h2>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">{guide.summary}</p>
         </div>
-        <Button asChild>
-          <Link href={guide.primaryHref}>{guide.primaryAction}<IconArrowRight /></Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link href="/user-guide">Full user guide<IconHelpCircle /></Link>
+          </Button>
+          <Button asChild>
+            <Link href={guide.primaryHref}>{guide.primaryAction}<IconArrowRight /></Link>
+          </Button>
+        </div>
       </div>
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         <div className="space-y-5">

@@ -15,6 +15,7 @@ import {
 import {
   IconCash,
   IconBuildingStore,
+  IconBook2,
   IconClipboardList,
   IconDots,
   IconLayoutDashboard,
@@ -81,6 +82,21 @@ const navItems: NavItem[] = [
     label: "Profile",
     shortLabel: "Profile",
     icon: IconUserCircle,
+    roles: [
+      "order_registrar",
+      "cashier",
+      "release_verifier",
+      "branch_manager",
+      "admin",
+      "super_admin",
+    ],
+    enabled: true,
+  },
+  {
+    href: "/user-guide",
+    label: "User guide",
+    shortLabel: "Guide",
+    icon: IconBook2,
     roles: [
       "order_registrar",
       "cashier",

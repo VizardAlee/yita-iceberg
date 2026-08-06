@@ -53,6 +53,12 @@ test.describe("authenticated role workflows", () => {
       await expect(session.page.getByRole("heading", { name: "What this role can do" })).toBeVisible();
       await expect(session.page.getByRole("heading", { name: "Step-by-step workflow" })).toBeVisible();
       await expect(session.page.getByText(/^STEP 5 OF 5$/).first()).toBeVisible();
+      await session.page.goto("/user-guide");
+      await expect(session.page.getByRole("heading", { name: "User guide", exact: true })).toBeVisible();
+      await expect(session.page.getByRole("heading", { name: "Step-by-step procedures" })).toBeVisible();
+      await expect(session.page.getByText(/procedures$/).first()).toBeVisible();
+      await expect(session.page.getByText("Missing or insufficient permissions.")).toHaveCount(0);
+      await expect(session.page.getByText("Access denied", { exact: true })).toHaveCount(0);
       await session.page.goto(path);
       await expect(session.page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
       await expect(session.page.getByText(/permission|access denied|internal/i)).toHaveCount(0);

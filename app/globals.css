@@ -460,6 +460,7 @@
 @media print {
   aside,
   header,
+  .mobile-bottom-nav,
   .print-hidden {
     display: none !important;
   }
@@ -476,5 +477,14 @@
   .print-surface {
     border: 0 !important;
     box-shadow: none !important;
+  }
+
+  .user-guide-page details,
+  .user-guide-page section {
+    break-inside: avoid-page;
+  }
+
+  .user-guide-page details > :not(summary) {
+    display: block !important;
   }
 }
