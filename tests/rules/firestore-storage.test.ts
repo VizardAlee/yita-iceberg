@@ -672,21 +672,30 @@ describe("Storage payment proof rules", () => {
 
 describe("Storage product image rules", () => {
   it("allows admins to upload product images and active staff to view them", async () => {
-    const adminStorage = testEnv.authenticatedContext("admin-user").storage();
+    const adminStorage = testEnv.authenticatedContext("admin-user", {
+      platformRole: "admin",
+      isActive: true,
+    }).storage();
     const productRef = ref(adminStorage, "product-images/product-1/primary");
     await assertSucceeds(uploadString(productRef, "image", "raw", {
       contentType: "image/webp",
       customMetadata: { productId: "product-1", uploadedBy: "admin-user" },
     }));
 
-    const registrarStorage = testEnv.authenticatedContext("registrar-a").storage();
+    const registrarStorage = testEnv.authenticatedContext("registrar-a", {
+      platformRole: "order_registrar",
+      isActive: true,
+    }).storage();
     await assertSucceeds(getBytes(ref(registrarStorage, "product-images/product-1/primary")));
     await assertFails(deleteObject(ref(registrarStorage, "product-images/product-1/primary")));
     await assertSucceeds(deleteObject(productRef));
   });
 
   it("rejects non-admin, invalid, and mismatched product image uploads", async () => {
-    const registrarStorage = testEnv.authenticatedContext("registrar-a").storage();
+    const registrarStorage = testEnv.authenticatedContext("registrar-a", {
+      platformRole: "order_registrar",
+      isActive: true,
+    }).storage();
     await assertFails(uploadString(
       ref(registrarStorage, "product-images/product-1/primary"),
       "image",
@@ -694,7 +703,10 @@ describe("Storage product image rules", () => {
       { contentType: "image/png", customMetadata: { productId: "product-1", uploadedBy: "registrar-a" } },
     ));
 
-    const adminStorage = testEnv.authenticatedContext("admin-user").storage();
+    const adminStorage = testEnv.authenticatedContext("admin-user", {
+      platformRole: "admin",
+      isActive: true,
+    }).storage();
     await assertFails(uploadString(
       ref(adminStorage, "product-images/product-1/not-primary"),
       "image",
@@ -712,6 +724,17 @@ describe("Storage product image rules", () => {
       "image",
       "raw",
       { contentType: "image/png", customMetadata: { productId: "another-product", uploadedBy: "admin-user" } },
+    ));
+
+    const inactiveAdminStorage = testEnv.authenticatedContext("admin-user", {
+      platformRole: "admin",
+      isActive: false,
+    }).storage();
+    await assertFails(uploadString(
+      ref(inactiveAdminStorage, "product-images/product-1/primary"),
+      "image",
+      "raw",
+      { contentType: "image/png", customMetadata: { productId: "product-1", uploadedBy: "admin-user" } },
     ));
   });
 });
