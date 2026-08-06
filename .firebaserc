@@ -2,5 +2,14 @@
   "projects": {
     "default": "yita-iceberg",
     "yita": "yita-iceberg"
+  },
+  "targets": {
+    "yita-iceberg": {
+      "storage": {
+        "main": [
+          "yita-iceberg.firebasestorage.app"
+        ]
+      }
+    }
   }
 }
